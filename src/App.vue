@@ -1,9 +1,6 @@
 <script>
 
 import {CHelperCore, wasmInitFuture} from './libCHelperWeb.js'
-import {ElButton} from 'element-plus'
-import {DynamicScroller, DynamicScrollerItem} from 'vue-virtual-scroller'
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 
 export default {
   data() {
@@ -12,14 +9,12 @@ export default {
       description: "作者：Yancey",
       input: "",
       errorReason: "",
-      showErrorReasons: false,
-      suggestionsIndex: []
-    };
+      suggestionsSize: []
+    }
   },
   created() {
-    this.loadWasmModule();
+    this.loadWasmModule()
   },
-  components: {ElButton, DynamicScroller, DynamicScrollerItem},
   methods: {
     async loadWasmModule() {
       fetch('release-experiment-1.21.1.03.cpack')
@@ -35,23 +30,15 @@ export default {
       if (this.input.length === 0) {
         this.structure = "欢迎使用CHelper"
         this.description = "作者：Yancey"
-        this.errorReason = this.core.getErrorReason()
-        this.showErrorReasons = false
+        this.errorReason = ""
       } else {
         this.structure = this.core.getStructure()
         this.description = this.core.getDescription()
         this.errorReason = this.core.getErrorReason()
-        this.showErrorReasons = this.errorReason.length > 0
       }
-      const suggestionsSize = this.core.getSuggestionSize();
-      const suggestionsIndex = [];
-      for (let i = 0; i < suggestionsSize; i++) {
-        suggestionsIndex.push(i)
-      }
-      this.suggestionsIndex = suggestionsIndex
+      this.suggestionsSize = [this.core.getSuggestionSize()]
     },
     getSuggestionTitle(which) {
-      console.log("getSuggestionTitle: " + which)
       return this.core.getSuggestionTitle(which)
     },
     getSuggestionDescription(which) {
@@ -60,95 +47,75 @@ export default {
     onSuggestionClick(which) {
       this.$refs.inputRef.focus()
       this.input = this.core.onSuggestionClick(which)
+      this.$refs.inputRef.scrollTo({
+        left: this.$refs.inputRef.scrollWidth,
+        behavior: "smooth",
+      })
       this.onTextChanged()
     },
     openSettings() {
       window.alert("暂时还没有设置")
     },
     copy() {
-      window.clipboardData.setData("Text", "text")
+      navigator.clipboard.writeText(this.input)
+          .catch(function (reason) {
+            window.alert("复制失败：" + reason)
+          });
     }
   }
 };
 </script>
 
 <template>
-  <el-container class="container" direction="vertical">
-    <el-header class="header">
-      <el-container direction="vertical">
+  <div class="container">
+    <header class="header">
+      <div>
         <div class="text-structure custom-font">{{ structure }}</div>
         <div class="text-description custom-font">{{ description }}</div>
-        <div class="text-error-reason custom-font" v-if="showErrorReasons">{{ errorReason }}</div>
-        <el-divider class="line"/>
-      </el-container>
-    </el-header>
-    <el-main class="main">
-      <!--      <DynamicScroller-->
-      <!--          class="scroller"-->
-      <!--          :min-item-size="0"-->
-      <!--          :items="suggestionsIndex">-->
-      <!--        <template v-slot="{ item, index, active }">-->
-      <!--          <DynamicScrollerItem-->
-      <!--              :item="item"-->
-      <!--              :active="active"-->
-      <!--              :size-dependencies="[item.message]"-->
-      <!--              :data-index="index">-->
-      <!--            <div class=" text-suggestion-name row-content custom-font">{{ getSuggestionTitle(item) }}</div>-->
-      <!--            <div class=" text-suggestion-description row-content custom-font">{{ getSuggestionDescription(item) }}</div>-->
-      <!--          </DynamicScrollerItem>-->
-      <!--        </template>-->
-      <!--      </DynamicScroller>-->
-      <div v-for="index in suggestionsIndex">
-        <div class="div-suggestion" @click="onSuggestionClick(index)">
-          <div class="text-suggestion-name row-content custom-font">{{ "getSuggestionTitle(index)" }}
-          </div>
-          <div class=" text-suggestion-description row-content custom-font">{{ "getSuggestionDescription(index)" }}
-          </div>
+        <div class="text-error-reason custom-font" v-if="errorReason">{{ errorReason }}</div>
+        <div class="line"/>
+      </div>
+    </header>
+    <main>
+      <div v-for="index in suggestionsSize[0]">
+        <div class="div-suggestion" @click="onSuggestionClick(index - 1)">
+          <div class="text-suggestion-name custom-font">{{ getSuggestionTitle(index - 1) }}</div>
+          <div class=" text-suggestion-description custom-font">{{ getSuggestionDescription(index - 1) }}</div>
         </div>
       </div>
-    </el-main>
-    <el-footer>
-      <el-row type="flex" justify="space-between">
-        <el-col class="div-button-left" :span="3">
-          <el-button class="button custom-font" type="primary" @click="openSettings">设置</el-button>
-        </el-col>
-        <el-col :span="18">
-          <el-input ref="inputRef" class="input-box custom-font" placeholder="请输入内容" v-model="input"
-                    @input="onTextChanged"></el-input>
-        </el-col>
-        <el-col class="div-button-right" :span="3">
-          <el-button class="button custom-font" type="primary" @click="copy">复制</el-button>
-        </el-col>
-      </el-row>
-    </el-footer>
-  </el-container>
+    </main>
+    <footer>
+      <button class="button custom-font" @click="openSettings">设置</button>
+      <input ref="inputRef" class="input-box custom-font" placeholder="请输入内容" v-model="input"
+             @input="onTextChanged">
+      <button class="button custom-font" @click="copy">复制</button>
+    </footer>
+  </div>
 </template>
 
 <style>
 
-.line {
-  margin: 5px 0;
-  height: 1px;
-}
-
-.main {
-  padding: 0 20px;
-}
-
 .container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  height: calc(100vh - 10px);
+  grid-template-rows: auto 1fr auto;
 }
 
-.header {
-  height: auto;
+.line {
+  margin: 5px 10px;
+  height: 1px;
+  background: darkgrey;
+}
+
+main {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .text-structure {
   height: auto;
   padding: 10px;
-  margin: 5px 0 0 0;
+  margin: 5px 5px 0 5px;
   color: #000000;
   background-color: #f5f7fa;
 }
@@ -156,7 +123,7 @@ export default {
 .text-description {
   height: auto;
   padding: 10px;
-  margin: 5px 0 0 0;
+  margin: 5px 5px 0 5px;
   color: #666666;
   background-color: #f5f7fa;
 }
@@ -164,7 +131,7 @@ export default {
 .text-error-reason {
   height: auto;
   padding: 10px;
-  margin: 5px 0 0 0;
+  margin: 5px 5px 0 5px;
   color: #FF4444;
   background-color: #f5f7fa;
 }
@@ -172,45 +139,59 @@ export default {
 .div-suggestion {
   height: auto;
   padding: 5px;
-  margin: 0 0 5px 0;
+  margin: 0 5px 5px 5px;
   background-color: #f5f7fa;
 }
 
 .text-suggestion-name {
   height: auto;
   color: #000000;
+  margin: 5px;
 }
 
 .text-suggestion-description {
   height: auto;
   color: #666666;
-}
-
-.row-content {
   margin: 5px;
 }
 
-.div-button-left {
-  text-align: left;
-}
-
-.div-button-right {
-  text-align: right;
-}
-
-.button {
-  height: 34px;
-  margin: 10px 0;
-  text-align: center;
+footer {
+  display: grid;
+  left: 20px;
+  width: calc(100vw - 10px);
+  margin: 5px 5px 0 5px;
+  grid-template-columns: auto 1fr auto;
 }
 
 .input-box {
-  height: 34px;
-  margin-top: 10px;
+  margin: 0 5px 0 5px;
+  width: calc(100vw - 140px);
+  height: auto;
   color: black;
+  text-align: left;
+  background-color: #f5f7fa;
+  padding: 10px;
+  border: 0;
+  border-radius: 5px;
+}
+
+.input-box:focus {
+  outline: 2px solid dodgerblue;
+}
+
+.button {
+  padding: 5px;
+  border: 0;
+  width: 50px;
+  height: auto;
+  color: #f5f7fa;
+  text-align: center;
+  background: dodgerblue;
+  border-radius: 5px;
 }
 
 .custom-font {
+  font-size: 15px;
   font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC',
   'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
 }

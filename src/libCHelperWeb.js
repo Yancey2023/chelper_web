@@ -5,9 +5,8 @@ var thisProgram = "./this.program";
 var quit_ = (status, toThrow) => {
     throw toThrow
 };
-var ENVIRONMENT_IS_WEB = typeof window == "object";
-var ENVIRONMENT_IS_WORKER = typeof importScripts == "function";
-var ENVIRONMENT_IS_NODE = typeof process == "object" && typeof process.versions == "object" && typeof process.versions.node == "string";
+var ENVIRONMENT_IS_WEB = true;
+var ENVIRONMENT_IS_WORKER = false;
 var scriptDirectory = "";
 
 function locateFile(path) {
@@ -18,48 +17,7 @@ function locateFile(path) {
 }
 
 var read_, readAsync, readBinary;
-if (ENVIRONMENT_IS_NODE) {
-    var fs = require("fs");
-    var nodePath = require("path");
-    if (ENVIRONMENT_IS_WORKER) {
-        scriptDirectory = nodePath.dirname(scriptDirectory) + "/"
-    } else {
-        scriptDirectory = __dirname + "/"
-    }
-    read_ = (filename, binary) => {
-        filename = isFileURI(filename) ? new URL(filename) : nodePath.normalize(filename);
-        return fs.readFileSync(filename, binary ? undefined : "utf8")
-    };
-    readBinary = filename => {
-        var ret = read_(filename, true);
-        if (!ret.buffer) {
-            ret = new Uint8Array(ret)
-        }
-        return ret
-    };
-    readAsync = (filename, onload, onerror, binary = true) => {
-        filename = isFileURI(filename) ? new URL(filename) : nodePath.normalize(filename);
-        fs.readFile(filename, binary ? undefined : "utf8", (err, data) => {
-            if (err) onerror(err); else onload(binary ? data.buffer : data)
-        })
-    };
-    if (!Module["thisProgram"] && process.argv.length > 1) {
-        thisProgram = process.argv[1].replace(/\\/g, "/")
-    }
-    arguments_ = process.argv.slice(2);
-    if (typeof module != "undefined") {
-        module["exports"] = Module
-    }
-    process.on("uncaughtException", ex => {
-        if (ex !== "unwind" && !(ex instanceof ExitStatus) && !(ex.context instanceof ExitStatus)) {
-            throw ex
-        }
-    });
-    quit_ = (status, toThrow) => {
-        process.exitCode = status;
-        throw toThrow
-    }
-} else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
+if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     if (ENVIRONMENT_IS_WORKER) {
         scriptDirectory = self.location.href
     } else if (typeof document != "undefined" && document.currentScript) {
@@ -209,7 +167,6 @@ function abort(what) {
 
 var dataURIPrefix = "data:application/octet-stream;base64,";
 var isDataURI = filename => filename.startsWith(dataURIPrefix);
-var isFileURI = filename => filename.startsWith("file://");
 var wasmBinaryFile;
 wasmBinaryFile = "libCHelperWeb.wasm";
 if (!isDataURI(wasmBinaryFile)) {
@@ -228,17 +185,13 @@ function getBinarySync(file) {
 
 function getBinaryPromise(binaryFile) {
     if (!wasmBinary && (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER)) {
-        if (typeof fetch == "function" && !isFileURI(binaryFile)) {
+        if (typeof fetch == "function") {
             return fetch(binaryFile, {credentials: "same-origin"}).then(response => {
                 if (!response["ok"]) {
                     throw `failed to load wasm binary file at '${binaryFile}'`
                 }
                 return response["arrayBuffer"]()
             }).catch(() => getBinarySync(binaryFile))
-        } else if (readAsync) {
-            return new Promise((resolve, reject) => {
-                readAsync(binaryFile, response => resolve(new Uint8Array(response)), reject)
-            })
         }
     }
     return Promise.resolve().then(() => getBinarySync(binaryFile))
@@ -252,7 +205,7 @@ function instantiateArrayBuffer(binaryFile, imports, receiver) {
 }
 
 function instantiateAsync(binary, binaryFile, imports, callback) {
-    if (!binary && typeof WebAssembly.instantiateStreaming == "function" && !isDataURI(binaryFile) && !isFileURI(binaryFile) && !ENVIRONMENT_IS_NODE && typeof fetch == "function") {
+    if (!binary && typeof WebAssembly.instantiateStreaming == "function" && !isDataURI(binaryFile) && typeof fetch == "function") {
         return fetch(binaryFile, {credentials: "same-origin"}).then(response => {
             var result = WebAssembly.instantiateStreaming(response, imports);
             return result.then(callback, function (reason) {
@@ -295,12 +248,6 @@ function createWasm() {
     }
     wasmInitFuture = instantiateAsync(wasmBinary, wasmBinaryFile, info, receiveInstantiationResult);
     return {}
-}
-
-function ExitStatus(status) {
-    this.name = "ExitStatus";
-    this.message = `Program terminated with exit(${status})`;
-    this.status = status
 }
 
 var callRuntimeCallbacks = callbacks => {
@@ -388,13 +335,35 @@ var _abort = () => {
     abort("")
 };
 var _emscripten_memcpy_js = (dest, src, num) => HEAPU8.copyWithin(dest, src, src + num);
-var abortOnCannotGrowMemory = requestedSize => {
-    abort("OOM")
+var getHeapMax = () => 2147483648;
+var growMemory = size => {
+    var b = wasmMemory.buffer;
+    var pages = (size - b.byteLength + 65535) / 65536;
+    try {
+        wasmMemory.grow(pages);
+        updateMemoryViews();
+        return 1
+    } catch (e) {
+    }
 };
 var _emscripten_resize_heap = requestedSize => {
     var oldSize = HEAPU8.length;
     requestedSize >>>= 0;
-    abortOnCannotGrowMemory(requestedSize)
+    var maxHeapSize = getHeapMax();
+    if (requestedSize > maxHeapSize) {
+        return false
+    }
+    var alignUp = (x, multiple) => x + (multiple - x % multiple) % multiple;
+    for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
+        var overGrownHeapSize = oldSize * (1 + .2 / cutDown);
+        overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296);
+        var newSize = Math.min(maxHeapSize, alignUp(Math.max(requestedSize, overGrownHeapSize), 65536));
+        var replacement = growMemory(newSize);
+        if (replacement) {
+            return true
+        }
+    }
+    return false
 };
 var ENV = {};
 var getExecutableName = () => thisProgram || "./this.program";
