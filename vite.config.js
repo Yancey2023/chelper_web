@@ -22,7 +22,8 @@ export default defineConfig({
         {
           name: 'vue',
           var: 'Vue',
-          path: 'https://cdn.bootcdn.net/ajax/libs/vue/3.4.31/vue.runtime.global.prod.min.js',
+          // path: 'https://cdn.bootcdn.net/ajax/libs/vue/3.4.31/vue.runtime.global.prod.min.js',
+          path: 'https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/3.2.31/vue.global.prod.min.js',
         },
       ],
     }),
