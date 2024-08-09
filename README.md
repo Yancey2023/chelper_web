@@ -1,14 +1,10 @@
-# chelper
+# CHelper-Web
 
-This template should help get you started developing with Vue 3 in Vite.
+I want to make a command helper for Minecraft Bedrock Edition , so here is CHelper, which means Command Helper.
 
-## Recommended IDE Setup
+## CHelper-Core
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+It is writing by c++. Please refer to [CHelper-Core](https://github.com/Yancey2023/CHelper-Core).
 
 ## Project Setup
 
