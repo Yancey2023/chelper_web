@@ -2,7 +2,7 @@
 
 I want to make a command helper for Minecraft Bedrock Edition , so here is CHelper, which means Command Helper.
 
-try it: <https://yancey2023.github.io/chelper>
+try it: <https://yancey2023.github.io/chelper_web>
 
 ## CHelper-Core
 
