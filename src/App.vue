@@ -50,7 +50,6 @@ export default {
       this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
     },
     loadMore(count) {
-      console.log("try load more: " + count)
       const start = this.suggestions.length
       const end = Math.min(start + count, this.realSuggestionSize)
       for (let i = start; i < end; i++) {
