@@ -16,6 +16,11 @@ export default {
   created() {
     this.loadWasmModule()
   },
+  mounted() {
+    window.addEventListener("resize", ()=>{
+      this.onSuggestionScroll()
+    })
+  },
   unmounted() {
     this.release()
   },
