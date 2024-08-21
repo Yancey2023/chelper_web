@@ -218,16 +218,16 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
     return instantiateArrayBuffer(binaryFile, imports, callback)
 }
 
-export var wasmInitFuture = undefined
+export var wasmInitFuture = undefined;
 
 function createWasm() {
     var info = {"a": wasmImports};
 
     function receiveInstance(instance, module) {
         wasmExports = instance.exports;
-        wasmMemory = wasmExports["h"];
+        wasmMemory = wasmExports["k"];
         updateMemoryViews();
-        addOnInit(wasmExports["i"]);
+        addOnInit(wasmExports["l"]);
         removeRunDependency("wasm-instantiate");
         return wasmExports
     }
@@ -414,6 +414,86 @@ var _environ_sizes_get = (penviron_count, penviron_buf_size) => {
     HEAPU32[penviron_buf_size >> 2] = bufSize;
     return 0
 };
+var _fd_close = fd => 52;
+var convertI32PairToI53Checked = (lo, hi) => hi + 2097152 >>> 0 < 4194305 - !!lo ? (lo >>> 0) + hi * 4294967296 : NaN;
+
+function _fd_seek(fd, offset_low, offset_high, whence, newOffset) {
+    var offset = convertI32PairToI53Checked(offset_low, offset_high);
+    return 70
+}
+
+var printCharBuffers = [null, [], []];
+var UTF8Decoder = typeof TextDecoder != "undefined" ? new TextDecoder("utf8") : undefined;
+var UTF8ArrayToString = (heapOrArray, idx, maxBytesToRead) => {
+    var endIdx = idx + maxBytesToRead;
+    var endPtr = idx;
+    while (heapOrArray[endPtr] && !(endPtr >= endIdx)) ++endPtr;
+    if (endPtr - idx > 16 && heapOrArray.buffer && UTF8Decoder) {
+        return UTF8Decoder.decode(heapOrArray.subarray(idx, endPtr))
+    }
+    var str = "";
+    while (idx < endPtr) {
+        var u0 = heapOrArray[idx++];
+        if (!(u0 & 128)) {
+            str += String.fromCharCode(u0);
+            continue
+        }
+        var u1 = heapOrArray[idx++] & 63;
+        if ((u0 & 224) == 192) {
+            str += String.fromCharCode((u0 & 31) << 6 | u1);
+            continue
+        }
+        var u2 = heapOrArray[idx++] & 63;
+        if ((u0 & 240) == 224) {
+            u0 = (u0 & 15) << 12 | u1 << 6 | u2
+        } else {
+            u0 = (u0 & 7) << 18 | u1 << 12 | u2 << 6 | heapOrArray[idx++] & 63
+        }
+        if (u0 < 65536) {
+            str += String.fromCharCode(u0)
+        } else {
+            var ch = u0 - 65536;
+            str += String.fromCharCode(55296 | ch >> 10, 56320 | ch & 1023)
+        }
+    }
+    return str
+};
+var printChar = (stream, curr) => {
+    var buffer = printCharBuffers[stream];
+    if (curr === 0 || curr === 10) {
+        (stream === 1 ? out : err)(UTF8ArrayToString(buffer, 0));
+        buffer.length = 0
+    } else {
+        buffer.push(curr)
+    }
+};
+var UTF8ToString = (ptr, maxBytesToRead) => ptr ? UTF8ArrayToString(HEAPU8, ptr, maxBytesToRead) : "";
+var SYSCALLS = {
+    varargs: undefined, get() {
+        var ret = HEAP32[+SYSCALLS.varargs >> 2];
+        SYSCALLS.varargs += 4;
+        return ret
+    }, getp() {
+        return SYSCALLS.get()
+    }, getStr(ptr) {
+        var ret = UTF8ToString(ptr);
+        return ret
+    }
+};
+var _fd_write = (fd, iov, iovcnt, pnum) => {
+    var num = 0;
+    for (var i = 0; i < iovcnt; i++) {
+        var ptr = HEAPU32[iov >> 2];
+        var len = HEAPU32[iov + 4 >> 2];
+        iov += 8;
+        for (var j = 0; j < len; j++) {
+            printChar(fd, HEAPU8[ptr + j])
+        }
+        num += len
+    }
+    HEAPU32[pnum >> 2] = num;
+    return 0
+};
 var isLeapYear = year => year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 var arraySum = (array, index) => {
     var sum = 0;
@@ -507,42 +587,6 @@ function intArrayFromString(stringy, dontAddNull, length) {
 var writeArrayToMemory = (array, buffer) => {
     HEAP8.set(array, buffer)
 };
-var UTF8Decoder = typeof TextDecoder != "undefined" ? new TextDecoder("utf8") : undefined;
-var UTF8ArrayToString = (heapOrArray, idx, maxBytesToRead) => {
-    var endIdx = idx + maxBytesToRead;
-    var endPtr = idx;
-    while (heapOrArray[endPtr] && !(endPtr >= endIdx)) ++endPtr;
-    if (endPtr - idx > 16 && heapOrArray.buffer && UTF8Decoder) {
-        return UTF8Decoder.decode(heapOrArray.subarray(idx, endPtr))
-    }
-    var str = "";
-    while (idx < endPtr) {
-        var u0 = heapOrArray[idx++];
-        if (!(u0 & 128)) {
-            str += String.fromCharCode(u0);
-            continue
-        }
-        var u1 = heapOrArray[idx++] & 63;
-        if ((u0 & 224) == 192) {
-            str += String.fromCharCode((u0 & 31) << 6 | u1);
-            continue
-        }
-        var u2 = heapOrArray[idx++] & 63;
-        if ((u0 & 240) == 224) {
-            u0 = (u0 & 15) << 12 | u1 << 6 | u2
-        } else {
-            u0 = (u0 & 7) << 18 | u1 << 12 | u2 << 6 | heapOrArray[idx++] & 63
-        }
-        if (u0 < 65536) {
-            str += String.fromCharCode(u0)
-        } else {
-            var ch = u0 - 65536;
-            str += String.fromCharCode(55296 | ch >> 10, 56320 | ch & 1023)
-        }
-    }
-    return str
-};
-var UTF8ToString = (ptr, maxBytesToRead) => ptr ? UTF8ArrayToString(HEAPU8, ptr, maxBytesToRead) : "";
 var _strftime = (s, maxsize, format, tm) => {
     var tm_zone = HEAPU32[tm + 40 >> 2];
     var date = {
@@ -801,31 +845,36 @@ var ccall = (ident, returnType, argTypes, args, opts) => {
 var wasmImports = {
     a: ___cxa_throw,
     b: _abort,
-    f: _emscripten_memcpy_js,
-    g: _emscripten_resize_heap,
-    d: _environ_get,
-    e: _environ_sizes_get,
-    c: _strftime_l
+    i: _emscripten_memcpy_js,
+    j: _emscripten_resize_heap,
+    g: _environ_get,
+    h: _environ_sizes_get,
+    e: _fd_close,
+    d: _fd_seek,
+    c: _fd_write,
+    f: _strftime_l
 };
 var wasmExports = createWasm();
-var ___wasm_call_ctors = () => (___wasm_call_ctors = wasmExports["i"])();
-var _init = Module["_init"] = (a0, a1) => (_init = Module["_init"] = wasmExports["j"])(a0, a1);
-var _release = Module["_release"] = a0 => (_release = Module["_release"] = wasmExports["k"])(a0);
-var _onTextChanged = Module["_onTextChanged"] = (a0, a1, a2) => (_onTextChanged = Module["_onTextChanged"] = wasmExports["l"])(a0, a1, a2);
-var _onSelectionChanged = Module["_onSelectionChanged"] = (a0, a1) => (_onSelectionChanged = Module["_onSelectionChanged"] = wasmExports["m"])(a0, a1);
-var _getStructure = Module["_getStructure"] = a0 => (_getStructure = Module["_getStructure"] = wasmExports["n"])(a0);
-var _getDescription = Module["_getDescription"] = a0 => (_getDescription = Module["_getDescription"] = wasmExports["o"])(a0);
-var _getErrorReason = Module["_getErrorReason"] = a0 => (_getErrorReason = Module["_getErrorReason"] = wasmExports["p"])(a0);
-var _getSuggestionSize = Module["_getSuggestionSize"] = a0 => (_getSuggestionSize = Module["_getSuggestionSize"] = wasmExports["q"])(a0);
-var _getSuggestionTitle = Module["_getSuggestionTitle"] = (a0, a1) => (_getSuggestionTitle = Module["_getSuggestionTitle"] = wasmExports["r"])(a0, a1);
-var _getSuggestionDescription = Module["_getSuggestionDescription"] = (a0, a1) => (_getSuggestionDescription = Module["_getSuggestionDescription"] = wasmExports["s"])(a0, a1);
-var _onSuggestionClick = Module["_onSuggestionClick"] = (a0, a1) => (_onSuggestionClick = Module["_onSuggestionClick"] = wasmExports["t"])(a0, a1);
-var _malloc = Module["_malloc"] = a0 => (_malloc = Module["_malloc"] = wasmExports["u"])(a0);
-var _free = Module["_free"] = a0 => (_free = Module["_free"] = wasmExports["v"])(a0);
-var stackSave = () => (stackSave = wasmExports["w"])();
-var stackRestore = a0 => (stackRestore = wasmExports["x"])(a0);
-var stackAlloc = a0 => (stackAlloc = wasmExports["y"])(a0);
-var ___cxa_is_pointer_type = a0 => (___cxa_is_pointer_type = wasmExports["z"])(a0);
+var ___wasm_call_ctors = () => (___wasm_call_ctors = wasmExports["l"])();
+var _init = Module["_init"] = (a0, a1) => (_init = Module["_init"] = wasmExports["m"])(a0, a1);
+var _release = Module["_release"] = a0 => (_release = Module["_release"] = wasmExports["n"])(a0);
+var _onTextChanged = Module["_onTextChanged"] = (a0, a1, a2) => (_onTextChanged = Module["_onTextChanged"] = wasmExports["o"])(a0, a1, a2);
+var _onSelectionChanged = Module["_onSelectionChanged"] = (a0, a1) => (_onSelectionChanged = Module["_onSelectionChanged"] = wasmExports["p"])(a0, a1);
+var _getStructure = Module["_getStructure"] = a0 => (_getStructure = Module["_getStructure"] = wasmExports["q"])(a0);
+var _getDescription = Module["_getDescription"] = a0 => (_getDescription = Module["_getDescription"] = wasmExports["r"])(a0);
+var _getErrorReason = Module["_getErrorReason"] = a0 => (_getErrorReason = Module["_getErrorReason"] = wasmExports["s"])(a0);
+var _getSuggestionSize = Module["_getSuggestionSize"] = a0 => (_getSuggestionSize = Module["_getSuggestionSize"] = wasmExports["t"])(a0);
+var _getSuggestionTitle = Module["_getSuggestionTitle"] = (a0, a1) => (_getSuggestionTitle = Module["_getSuggestionTitle"] = wasmExports["u"])(a0, a1);
+var _getSuggestionDescription = Module["_getSuggestionDescription"] = (a0, a1) => (_getSuggestionDescription = Module["_getSuggestionDescription"] = wasmExports["v"])(a0, a1);
+var _onSuggestionClick = Module["_onSuggestionClick"] = (a0, a1) => (_onSuggestionClick = Module["_onSuggestionClick"] = wasmExports["w"])(a0, a1);
+var _getStringAfterSuggestionClick = Module["_getStringAfterSuggestionClick"] = a0 => (_getStringAfterSuggestionClick = Module["_getStringAfterSuggestionClick"] = wasmExports["x"])(a0);
+var _getSelectionAfterSuggestionClick = Module["_getSelectionAfterSuggestionClick"] = a0 => (_getSelectionAfterSuggestionClick = Module["_getSelectionAfterSuggestionClick"] = wasmExports["y"])(a0);
+var _malloc = Module["_malloc"] = a0 => (_malloc = Module["_malloc"] = wasmExports["z"])(a0);
+var _free = Module["_free"] = a0 => (_free = Module["_free"] = wasmExports["A"])(a0);
+var stackSave = () => (stackSave = wasmExports["B"])();
+var stackRestore = a0 => (stackRestore = wasmExports["C"])(a0);
+var stackAlloc = a0 => (stackAlloc = wasmExports["D"])(a0);
+var ___cxa_is_pointer_type = a0 => (___cxa_is_pointer_type = wasmExports["E"])(a0);
 Module["ccall"] = ccall;
 var calledRun;
 dependenciesFulfilled = function runCaller() {
@@ -875,53 +924,61 @@ run();
 
 export class CHelperCore {
     constructor(cpack) {
-        const cpackPtr = Module._malloc(cpack.byteLength)
-        Module.HEAP8.set(cpack, cpackPtr)
-        this._corePtr = Module._init(cpackPtr, cpack.byteLength)
-        Module._free(cpackPtr)
+        const cpackPtr = Module._malloc(cpack.byteLength);
+        Module.HEAP8.set(cpack, cpackPtr);
+        this._corePtr = Module._init(cpackPtr, cpack.byteLength);
+        Module._free(cpackPtr);
         if (this._corePtr === 0) {
-            throw "fail to init CHelper core"
+            throw "fail to init CHelper core";
         }
     }
 
     release() {
-        Module._release(this._corePtr)
-        this._corePtr = 0
+        Module._release(this._corePtr);
+        this._corePtr = 0;
     }
 
     onTextChanged(content, index) {
-        Module.ccall("onTextChanged", null, ["number", "string", "number"], [this._corePtr, content, index])
+        Module.ccall("onTextChanged", null, ["number", "string", "number"], [this._corePtr, content, index]);
     }
 
     onSelectionChanged(index) {
-        Module._onSelectionChanged(this._corePtr, index)
+        Module._onSelectionChanged(this._corePtr, index);
     }
 
     getStructure() {
-        return Module.ccall("getStructure", "string", ["number"], [this._corePtr])
+        return Module.ccall("getStructure", "string", ["number"], [this._corePtr]);
     }
 
     getDescription() {
-        return Module.ccall("getDescription", "string", ["number"], [this._corePtr])
+        return Module.ccall("getDescription", "string", ["number"], [this._corePtr]);
     }
 
     getErrorReason() {
-        return Module.ccall("getErrorReason", "string", ["number"], [this._corePtr])
+        return Module.ccall("getErrorReason", "string", ["number"], [this._corePtr]);
     }
 
     getSuggestionSize() {
-        return Module._getSuggestionSize(this._corePtr)
+        return Module._getSuggestionSize(this._corePtr);
     }
 
     getSuggestionTitle(which) {
-        return Module.ccall("getSuggestionTitle", "string", ["number", "number"], [this._corePtr, which])
+        return Module.ccall("getSuggestionTitle", "string", ["number", "number"], [this._corePtr, which]);
     }
 
     getSuggestionDescription(which) {
-        return Module.ccall("getSuggestionDescription", "string", ["number", "number"], [this._corePtr, which])
+        return Module.ccall("getSuggestionDescription", "string", ["number", "number"], [this._corePtr, which]);
     }
 
     onSuggestionClick(which) {
-        return Module.ccall("onSuggestionClick", "string", ["number", "number"], [this._corePtr, which])
+        return Module.ccall("onSuggestionClick", null, ["number", "number"], [this._corePtr, which]);
+    }
+
+    getStringAfterSuggestionClick() {
+        return Module.ccall("getStringAfterSuggestionClick", "string", ["number"], [this._corePtr]);
+    }
+
+    getSelectionAfterSuggestionClick() {
+        return Module.ccall("getSelectionAfterSuggestionClick", "number", ["number"], [this._corePtr]);
     }
 }

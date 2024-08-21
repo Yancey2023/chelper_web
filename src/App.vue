@@ -15,15 +15,23 @@ export default {
   created() {
     this.loadWasmModule()
   },
+  unmounted() {
+    this.release()
+  },
   methods: {
     async loadWasmModule() {
-      fetch('release-experiment-1.21.1.03.cpack')
+      fetch('release-experiment-1.21.20.03.cpack')
           .then((response) => response.arrayBuffer())
           .then(async (cpack) => {
             await wasmInitFuture
             this.core = new CHelperCore(new Uint8Array(cpack))
             this.onTextChanged()
           })
+    },
+    release() {
+      if (this.core != null) {
+        this.core.release()
+      }
     },
     onTextChanged() {
       this.core.onTextChanged(this.input, this.input.length);
@@ -37,6 +45,10 @@ export default {
         this.errorReason = this.core.getErrorReason()
       }
       this.suggestionsSize = [this.core.getSuggestionSize()]
+      // 因为补全建议太多会卡，所以只显示前50个
+      if (this.suggestionsSize[0] > 50) {
+        this.suggestionsSize = [50];
+      }
     },
     getSuggestionTitle(which) {
       return this.core.getSuggestionTitle(which)
@@ -46,11 +58,9 @@ export default {
     },
     onSuggestionClick(which) {
       this.$refs.inputRef.focus()
-      this.input = this.core.onSuggestionClick(which)
-      this.$refs.inputRef.scrollTo({
-        left: this.$refs.inputRef.scrollWidth,
-        behavior: "smooth",
-      })
+      this.core.onSuggestionClick(which)
+      this.input = this.core.getStringAfterSuggestionClick()
+      this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick()
       this.onTextChanged()
     },
     openSettings() {
