@@ -48,6 +48,7 @@ export default {
       this.realSuggestionSize = this.core.getSuggestionSize()
       this.suggestions = []
       this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
+      this.$refs.listRef.scrollTo(0, 0)
     },
     loadMore(count) {
       const start = this.suggestions.length
@@ -60,8 +61,8 @@ export default {
       }
     },
     onSuggestionScroll() {
-      if (this.$refs.listRef.scrollTop + this.$refs.listRef.clientHeight >= this.$refs.listRef.scrollHeight - 50) {
-        this.loadMore(10)
+      if (this.$refs.listRef.scrollTop + 2 * this.$refs.listRef.clientHeight >= this.$refs.listRef.scrollHeight) {
+        this.loadMore(this.$refs.listRef.clientHeight / 25)
       }
     },
     onSuggestionClick(which) {
