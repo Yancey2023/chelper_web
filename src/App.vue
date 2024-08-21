@@ -96,7 +96,7 @@ export default {
       </div>
     </header>
     <main ref="listRef" @scroll="onSuggestionScroll">
-      <div class="div-suggestion" v-for="(suggestion, index) in suggestions" @click="onSuggestionClick(index - 1)">
+      <div class="div-suggestion" v-for="(suggestion, index) in suggestions" @click="onSuggestionClick(index)">
         <div class="text-suggestion-name custom-font">{{ suggestion.title }}</div>
         <div class=" text-suggestion-description custom-font">{{ suggestion.description }}</div>
       </div>
