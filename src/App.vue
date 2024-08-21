@@ -21,7 +21,7 @@ export default {
   },
   methods: {
     async loadWasmModule() {
-      fetch('release-experiment-1.21.20.03.cpack')
+      fetch('release-experiment-1.21.21.01.cpack')
           .then((response) => response.arrayBuffer())
           .then(async (cpack) => {
             await wasmInitFuture
