@@ -9,7 +9,8 @@ export default {
       description: "作者：Yancey",
       input: "",
       errorReason: "",
-      suggestionsSize: []
+      realSuggestionSize: 0,
+      suggestions: []
     }
   },
   created() {
@@ -44,17 +45,25 @@ export default {
         this.description = this.core.getDescription()
         this.errorReason = this.core.getErrorReason()
       }
-      this.suggestionsSize = [this.core.getSuggestionSize()]
-      // 因为补全建议太多会卡，所以只显示前50个
-      if (this.suggestionsSize[0] > 50) {
-        this.suggestionsSize = [50];
+      this.realSuggestionSize = this.core.getSuggestionSize()
+      this.suggestions = []
+      this.loadMore(10)
+    },
+    loadMore(count) {
+      // console.log("try load more")
+      const start = this.suggestions.length
+      const end = Math.min(start + count, this.realSuggestionSize)
+      for (let i = start; i < end; i++) {
+        this.suggestions.push({
+          title: this.core.getSuggestionTitle(i),
+          description: this.core.getSuggestionDescription(i),
+        })
       }
     },
-    getSuggestionTitle(which) {
-      return this.core.getSuggestionTitle(which)
-    },
-    getSuggestionDescription(which) {
-      return this.core.getSuggestionDescription(which)
+    onSuggestionScroll() {
+      if (this.$refs.listRef.scrollTop + this.$refs.listRef.clientHeight >= this.$refs.listRef.scrollHeight - 50) {
+        this.loadMore(10)
+      }
     },
     onSuggestionClick(which) {
       this.$refs.inputRef.focus()
@@ -86,12 +95,10 @@ export default {
         <div class="line"/>
       </div>
     </header>
-    <main>
-      <div v-for="index in suggestionsSize[0]">
-        <div class="div-suggestion" @click="onSuggestionClick(index - 1)">
-          <div class="text-suggestion-name custom-font">{{ getSuggestionTitle(index - 1) }}</div>
-          <div class=" text-suggestion-description custom-font">{{ getSuggestionDescription(index - 1) }}</div>
-        </div>
+    <main ref="listRef" @scroll="onSuggestionScroll">
+      <div class="div-suggestion" v-for="(suggestion, index) in suggestions" @click="onSuggestionClick(index - 1)">
+        <div class="text-suggestion-name custom-font">{{ suggestion.title }}</div>
+        <div class=" text-suggestion-description custom-font">{{ suggestion.description }}</div>
       </div>
     </main>
     <footer>
