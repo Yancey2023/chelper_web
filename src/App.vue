@@ -1,93 +1,3 @@
-<!--<script>-->
-<!--import {CHelperCore, wasmInitFuture} from './libCHelperWeb.js'-->
-<!--import Header from "@/components/BaseHeader.vue";-->
-
-<!--export default {-->
-<!--  components: {Header},-->
-<!--  data() {-->
-<!--    return {-->
-<!--      structure: "CHelper正在加载中，请稍候",-->
-<!--      description: "作者：Yancey",-->
-<!--      input: "",-->
-<!--      errorReason: "",-->
-<!--      realSuggestionSize: 0,-->
-<!--      suggestions: []-->
-<!--    }-->
-<!--  },-->
-<!--  created() {-->
-<!--    this.loadWasmModule()-->
-<!--  },-->
-<!--  mounted() {-->
-<!--    window.addEventListener("resize", ()=>{-->
-<!--      this.onSuggestionScroll()-->
-<!--    })-->
-<!--  },-->
-<!--  unmounted() {-->
-<!--    this.release()-->
-<!--  },-->
-<!--  methods: {-->
-<!--    async loadWasmModule() {-->
-<!--      fetch('release-experiment-1.21.21.01.cpack')-->
-<!--          .then((response) => response.arrayBuffer())-->
-<!--          .then(async (cpack) => {-->
-<!--            await wasmInitFuture-->
-<!--            this.core = new CHelperCore(new Uint8Array(cpack))-->
-<!--            this.onTextChanged()-->
-<!--          })-->
-<!--    },-->
-<!--    release() {-->
-<!--      if (this.core != null) {-->
-<!--        this.core.release()-->
-<!--      }-->
-<!--    },-->
-<!--    onTextChanged() {-->
-<!--      this.core.onTextChanged(this.input, this.input.length);-->
-<!--      if (this.input.length === 0) {-->
-<!--        this.structure = "欢迎使用CHelper"-->
-<!--        this.description = "作者：Yancey"-->
-<!--        this.errorReason = ""-->
-<!--      } else {-->
-<!--        this.structure = this.core.getStructure()-->
-<!--        this.description = this.core.getDescription()-->
-<!--        this.errorReason = this.core.getErrorReason()-->
-<!--      }-->
-<!--      this.realSuggestionSize = this.core.getSuggestionSize()-->
-<!--      this.suggestions = []-->
-<!--      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))-->
-<!--      this.$refs.listRef.scrollTo(0, 0)-->
-<!--    },-->
-<!--    loadMore(count) {-->
-<!--      const start = this.suggestions.length-->
-<!--      const end = Math.min(start + count, this.realSuggestionSize)-->
-<!--      for (let i = start; i < end; i++) {-->
-<!--        this.suggestions.push({-->
-<!--          title: this.core.getSuggestionTitle(i),-->
-<!--          description: this.core.getSuggestionDescription(i),-->
-<!--        })-->
-<!--      }-->
-<!--    },-->
-<!--    onSuggestionScroll() {-->
-<!--      if (this.$refs.listRef.scrollTop + 2 * this.$refs.listRef.clientHeight >= this.$refs.listRef.scrollHeight) {-->
-<!--        this.loadMore(this.$refs.listRef.clientHeight / 25)-->
-<!--      }-->
-<!--    },-->
-<!--    onSuggestionClick(which) {-->
-<!--      this.$refs.inputRef.focus()-->
-<!--      this.core.onSuggestionClick(which)-->
-<!--      this.input = this.core.getStringAfterSuggestionClick()-->
-<!--      this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick()-->
-<!--      this.onTextChanged()-->
-<!--    },-->
-<!--    copy() {-->
-<!--      navigator.clipboard.writeText(this.input)-->
-<!--          .catch(function (reason) {-->
-<!--            window.alert("复制失败：" + reason)-->
-<!--          });-->
-<!--    }-->
-<!--  }-->
-<!--};-->
-<!--</script>-->
-
 <template>
   <div id="app" class="container">
     <router-view></router-view>
@@ -111,6 +21,8 @@
 main {
   flex: 1;
   overflow-y: auto;
+  position: relative;
+  height: ;
 }
 
 .text-structure {

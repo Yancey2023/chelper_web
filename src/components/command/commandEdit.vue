@@ -10,13 +10,37 @@
 </template>
 
 <script setup>
+import {ref} from "vue";
+
 const input = ref("");
+const inputRef = ref()
+
+const emit = defineEmits(['onTextChanged'])
 const openSettings = function() {
   window.alert("暂时还没有设置")
 };
 
+const getInputRef = function (){
+  return inputRef.value
+}
+
+const getInputData = function (){
+  return input.value
+}
+
+const upDateInput = function (newData){
+  input.value = newData
+}
+
+const onTextChanged = function (){
+  emit("onTextChanged")
+}
+
 defineExpose({
-  input
+  input,
+  getInputRef,
+  upDateInput,
+  getInputData
 })
 </script>
 

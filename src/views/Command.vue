@@ -2,8 +2,13 @@
   <div>
     <commandList
         ref="cmdlstRef"
-        :suggestions="suggestions"></commandList>
-<!--    <commandEdit></commandEdit>-->
+        :suggestions="suggestions"
+        @onSuggestionClick="onSuggestionClick"
+        @loadMore="onTextChanged"></commandList>
+
+    <commandEdit
+    ref="cmdEdtRef"
+    @onTextChanged="onTextChanged"></commandEdit>
   </div>
 </template>
 
@@ -16,26 +21,27 @@ import {CHelperCore, wasmInitFuture} from "@/libCHelperWeb.js";
 
 const structure = ref("CHelper正在加载中，请稍候");
 const description = ref("作者：Yancey");
-const input = ref("");
+const suggestions = ref([]);
 const errorReason = ref("");
 const realSuggestionSize = ref(0);
-const suggestions = ref([]);
 let core = reactive({});
 
 const cmdlstRef = ref();
+const cmdEdtRef = ref();
+
+const a = ref(0)
 
 const loadWasmModule = async function (){
   getResourceapi.getResource().then(async (res)=>{
     await wasmInitFuture
     core = new CHelperCore(new Uint8Array(res.data))
-    console.log(core);
-    onTextChanged()
+    // onTextChanged()
   })
 }
 
 const onTextChanged = function () {
-  core.onTextChanged(input.value, input.value.length);
-  if (input.value.length === 0) {
+  core.onTextChanged(cmdEdtRef.value.getInputData(), cmdEdtRef.value.getInputData().length);
+  if (cmdEdtRef.value.getInputRef().length === 0) {
     structure.value = "欢迎使用CHelper"
     description.value = "作者：Yancey"
     errorReason.value = ""
@@ -47,7 +53,7 @@ const onTextChanged = function () {
   realSuggestionSize.value = core.getSuggestionSize()
   suggestions.value = []
   loadMore(Math.floor(cmdlstRef.value.getListRef().clientHeight / 25))
-  cmdlstRef.value.getListRef().scrollTo(0,0)
+  console.log(cmdlstRef.value.getListRef().clientHeight)
 }
 
 const init = ()=>{
@@ -56,24 +62,32 @@ const init = ()=>{
 }
 init()
 
+const onSuggestionClick = function (which) {
+  cmdEdtRef.value.getInputRef().focus()
+  core.onSuggestionClick(which)
+  cmdEdtRef.value.upDateInput(core.getStringAfterSuggestionClick())
+  cmdEdtRef.value.getInputRef().selectionStart = cmdEdtRef.value.getInputRef().selectionEnd = core.getSelectionAfterSuggestionClick()
+  onTextChanged()
+  window.scrollTo(0,0)
+}
+
 const loadMore = function (count) {
-  const start = suggestions.value.length
-  const end = Math.min(start + count, realSuggestionSize.value)
-  for (let i = start; i < end; i++) {
+  // const start = suggestions.value.length
+  // const end = Math.min(start + count, realSuggestionSize.value)
+  // for (let i = start; i < end; i++) {
+  //   suggestions.value.push({
+  //     title: core.getSuggestionTitle(i),
+  //     description: core.getSuggestionDescription(i),
+  //   })
+  // }
+  for (let i = 0; i < a.value; i++) {
     suggestions.value.push({
       title: core.getSuggestionTitle(i),
       description: core.getSuggestionDescription(i),
     })
   }
+  a.value+=2
 }
-
-// const onSuggestionClick = function (which) {
-//   this.$refs.inputRef.focus()
-//   core.onSuggestionClick(which)
-//   input.value = core.getStringAfterSuggestionClick()
-//   this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick()
-//   onTextChanged()
-// }
 
 </script>
 
