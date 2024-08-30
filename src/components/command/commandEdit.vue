@@ -45,5 +45,45 @@ defineExpose({
 </script>
 
 <style scoped>
+.button {
+  padding: 5px;
+  border: 0;
+  width: 50px;
+  height: auto;
+  color: #f5f7fa;
+  text-align: center;
+  background: dodgerblue;
+  border-radius: 5px;
+}
 
+.custom-font {
+  font-size: 15px;
+  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC',
+  'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+
+.input-box {
+  margin: 0 5px 0 5px;
+  width: calc(100vw - 140px);
+  height: auto;
+  color: black;
+  text-align: left;
+  background-color: #f5f7fa;
+  padding: 10px;
+  border: 0;
+  border-radius: 5px;
+}
+
+.input-box:focus {
+  outline: 2px solid dodgerblue;
+}
+
+
+footer {
+  display: grid;
+  left: 20px;
+  width: calc(100vw - 10px);
+  margin: 5px 5px 0 5px;
+  grid-template-columns: auto 1fr auto;
+}
 </style>

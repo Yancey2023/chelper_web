@@ -1,14 +1,12 @@
 <template>
-  <div>
+  <div class="container">
     <el-row>
-      <el-col :span="24">
+      <el-col :span="24" style="height: 10vh;">
 
         <BaseHeader></BaseHeader>
 
       </el-col>
-    </el-row>
-    <el-row>
-      <el-col :span="24">
+      <el-col :span="24" style="height: 90vh;">
 
         <router-view></router-view>
 
@@ -38,6 +36,12 @@ import BaseHeader from "@/components/BaseHeader.vue";
 .grid-content {
   border-radius: 4px;
   min-height: 36px;
+}
+
+.container {
+  display: grid;
+  height: calc(100vh - 10px);
+  grid-template-rows: auto 1fr auto;
 }
 
 </style>
