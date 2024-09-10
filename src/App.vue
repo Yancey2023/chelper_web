@@ -123,6 +123,9 @@ export default {
                @input="onTextChanged">
         <button class="button custom-font" @click="copy">复制</button>
       </div>
+      <div class="beian">
+        <a class="beianlink" href="https://beian.miit.gov.cn/shouye.html">粤ICP备2024307783号</a>
+      </div>
     </footer>
   </div>
 </template>
@@ -195,6 +198,27 @@ main {
   width: calc(100vw - 10px);
   margin: 5px 5px 0 5px;
   grid-template-columns: auto 1fr auto;
+}
+
+.beian {
+  left: 0;
+  width: calc(100vw - 10px);
+  text-align: center;
+  padding: 5px;
+}
+
+.beianlink {
+  color: #666666;
+  text-decoration: none;
+  font-size: 13px;
+  text-align: center;
+  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC',
+  'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+
+.beianlink:hover {
+  color: dodgerblue;
+  text-decoration: underline;
 }
 
 .input-box {
