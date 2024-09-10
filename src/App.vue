@@ -17,14 +17,21 @@ export default {
     this.loadWasmModule()
   },
   mounted() {
-    window.addEventListener("resize", ()=>{
+    this.resetVhAndPx()
+    window.addEventListener("resize", () => {
       this.onSuggestionScroll()
+      this.resetVhAndPx()
     })
   },
   unmounted() {
     this.release()
   },
   methods: {
+    resetVhAndPx() {
+      let vh = window.innerHeight * 0.01
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
+      document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px'
+    },
     async loadWasmModule() {
       fetch('release-experiment-1.21.21.01.cpack')
           .then((response) => response.arrayBuffer())
@@ -53,7 +60,10 @@ export default {
       this.realSuggestionSize = this.core.getSuggestionSize()
       this.suggestions = []
       this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
-      this.$refs.listRef.scrollTo(0, 0)
+      this.$refs.inputRef.scrollTo({
+        left: this.$refs.inputRef.scrollWidth,
+        behavior: "smooth",
+      })
     },
     loadMore(count) {
       const start = this.suggestions.length
@@ -107,10 +117,12 @@ export default {
       </div>
     </main>
     <footer>
-      <button class="button custom-font" @click="openSettings">设置</button>
-      <input ref="inputRef" class="input-box custom-font" placeholder="请输入内容" v-model="input"
-             @input="onTextChanged">
-      <button class="button custom-font" @click="copy">复制</button>
+      <div class="below">
+        <button class="button custom-font" @click="openSettings">设置</button>
+        <input ref="inputRef" class="input-box custom-font" placeholder="请输入内容" v-model="input"
+               @input="onTextChanged">
+        <button class="button custom-font" @click="copy">复制</button>
+      </div>
     </footer>
   </div>
 </template>
@@ -119,7 +131,7 @@ export default {
 
 .container {
   display: grid;
-  height: calc(100vh - 10px);
+  height: calc(var(--vh, 1vh) * 100);
   grid-template-rows: auto 1fr auto;
 }
 
@@ -177,7 +189,7 @@ main {
   margin: 5px;
 }
 
-footer {
+.below {
   display: grid;
   left: 20px;
   width: calc(100vw - 10px);
