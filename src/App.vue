@@ -204,7 +204,7 @@ main {
   left: 0;
   width: calc(100vw - 10px);
   text-align: center;
-  padding: 5px;
+  padding-bottom: 5px;
 }
 
 .beianlink {
