@@ -193,7 +193,7 @@ main {
   display: grid;
   left: 20px;
   width: calc(100vw - 10px);
-  margin: 5px 5px 0 5px;
+  margin: 5px;
   grid-template-columns: auto 1fr auto;
 }
 
