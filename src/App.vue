@@ -1,6 +1,6 @@
 <script>
 
-import {CHelperCore, wasmInitFuture} from './libCHelperWeb.js'
+import {DEFAULT_BRANCH, getCore} from "@/CPackManager.js";
 
 export default {
   data() {
@@ -13,8 +13,9 @@ export default {
       suggestions: []
     }
   },
-  created() {
-    this.loadWasmModule()
+  async created() {
+    this.core = null
+    this.setCore(await getCore(DEFAULT_BRANCH))
   },
   mounted() {
     this.resetVhAndPx()
@@ -32,22 +33,21 @@ export default {
       document.documentElement.style.setProperty('--vh', `${vh}px`)
       document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px'
     },
-    async loadWasmModule() {
-      fetch('release-experiment-1.21.21.01.cpack')
-          .then((response) => response.arrayBuffer())
-          .then(async (cpack) => {
-            await wasmInitFuture
-            this.core = new CHelperCore(new Uint8Array(cpack))
-            this.onTextChanged()
-          })
+    setCore(newCore) {
+      if (this.core != null) {
+        this.core.release()
+      }
+      this.core = newCore
+      this.onTextChanged()
     },
     release() {
       if (this.core != null) {
         this.core.release()
+        this.core = null
       }
     },
     onTextChanged() {
-      this.core.onTextChanged(this.input, this.input.length);
+      this.core.onTextChanged(this.input, this.input.length)
       if (this.input.length === 0) {
         this.structure = "欢迎使用CHelper"
         this.description = "作者：Yancey"
@@ -87,17 +87,17 @@ export default {
       this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick()
       this.onTextChanged()
     },
-    openSettings() {
-      window.alert("暂时还没有设置")
+    openBranchSelector() {
+      
     },
     copy() {
       navigator.clipboard.writeText(this.input)
           .catch(function (reason) {
             window.alert("复制失败：" + reason)
-          });
+          })
     }
   }
-};
+}
 </script>
 
 <template>
