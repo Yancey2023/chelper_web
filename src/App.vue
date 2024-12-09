@@ -33,7 +33,7 @@ export default {
       document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px'
     },
     async loadWasmModule() {
-      fetch('release-experiment-1.21.30.03.cpack')
+      fetch('release-experiment-1.21.50.07.cpack')
           .then((response) => response.arrayBuffer())
           .then(async (cpack) => {
             await wasmInitFuture
