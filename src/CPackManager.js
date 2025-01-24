@@ -19,18 +19,25 @@ export const ALL_BRANCH_CHINESE = [
     "正式版-原版-" + VERSION_RELEASE,
     "正式版-实验性玩法-" + VERSION_RELEASE,
     "测试版-原版-" + VERSION_BETA,
-    "测试版-实验性玩法-" +VERSION_BETA,
+    "测试版-实验性玩法-" + VERSION_BETA,
     "中国版-原版-" + VERSION_NETEASE,
     "中国版-实验性玩法-" + VERSION_NETEASE
 ];
 
+let cpackCache = {};
+
 export async function getCore(branch) {
-    return fetch(getRealFileName(branch))
-        .then((response) => response.arrayBuffer())
-        .then(async (cpack) => {
-            await createWasmFuture;
-            return new CHelperCore(new Uint8Array(cpack));
-        });
+    let cpack = cpackCache[branch]
+    if (cpack === undefined) {
+        cpack = await fetch(getRealFileName(branch))
+            .then((response) => response.arrayBuffer())
+            .then(async (cpack) => {
+                return new Uint8Array(cpack);
+            });
+        cpackCache[branch] = cpack;
+    }
+    await createWasmFuture;
+    return new CHelperCore(cpack);
 }
 
 export function getRealFileName(branch) {
