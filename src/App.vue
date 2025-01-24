@@ -1,8 +1,46 @@
+<template>
+  <div class="container">
+    <header class="header">
+      <div>
+        <div class="text-structure">{{ structure }}</div>
+        <div class="text-description">{{ description }}</div>
+        <div class="text-error-reason" v-if="errorReason">{{ errorReason }}</div>
+        <div class="line"/>
+      </div>
+    </header>
+    <main ref="listRef" @scroll="onSuggestionScroll">
+      <div class="div-suggestion" v-for="(suggestion, index) in suggestions" @click="onSuggestionClick(index)">
+        <div class="text-suggestion-name">{{ suggestion.title }}</div>
+        <div class=" text-suggestion-description">{{ suggestion.description }}</div>
+      </div>
+    </main>
+    <footer>
+      <div class="below">
+        <button class="button" @click="selectBranch">分支</button>
+        <input ref="inputRef" class="input-box" placeholder="请输入内容" v-model="input"
+               @input="onTextChanged">
+        <button class="button" @click="copy">复制</button>
+      </div>
+    </footer>
+    <SelectorModal
+        :data="getAllBranch()"
+        :showNames="getAllBranchChinese()"
+        :show="isBranchSelectorVisible"
+        @close="closeBranchSelector"
+        @select="onBranchSelect"
+    />
+  </div>
+</template>
+
 <script>
 
-import {DEFAULT_BRANCH, getCore} from "@/CPackManager.js";
+import {ALL_BRANCH, ALL_BRANCH_CHINESE, DEFAULT_BRANCH, getCore} from "@/CPackManager.js";
+import SelectorModal from "@/SelectorModal.vue";
 
 export default {
+  components: {
+    SelectorModal
+  },
   data() {
     return {
       structure: "CHelper正在加载中，请稍候",
@@ -10,60 +48,61 @@ export default {
       input: "",
       errorReason: "",
       realSuggestionSize: 0,
-      suggestions: []
+      suggestions: [],
+      isBranchSelectorVisible: false
     }
   },
   async created() {
-    this.core = null
-    this.setCore(await getCore(DEFAULT_BRANCH))
+    this.core = undefined;
+    this.setCore(await getCore(DEFAULT_BRANCH));
   },
   mounted() {
-    this.resetVhAndPx()
+    this.resetVhAndPx();
     window.addEventListener("resize", () => {
-      this.onSuggestionScroll()
-      this.resetVhAndPx()
-    })
+      this.onSuggestionScroll();
+      this.resetVhAndPx();
+    });
   },
   unmounted() {
-    this.release()
+    this.release();
   },
   methods: {
     resetVhAndPx() {
-      let vh = window.innerHeight * 0.01
-      document.documentElement.style.setProperty('--vh', `${vh}px`)
-      document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px'
+      let vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px';
     },
     setCore(newCore) {
       if (this.core !== undefined) {
-        this.core.release()
+        this.core.release();
       }
-      this.core = newCore
-      this.onTextChanged()
+      this.core = newCore;
+      this.onTextChanged();
     },
     release() {
       if (this.core === undefined) {
-        return
+        return;
       }
       this.core.release()
-      this.core = undefined
+      this.core = undefined;
     },
     onTextChanged() {
       if (this.core === undefined) {
-        return
+        return;
       }
       this.core.onTextChanged(this.input, this.input.length)
       if (this.input.length === 0) {
-        this.structure = "欢迎使用CHelper"
-        this.description = "作者：Yancey"
-        this.errorReason = ""
+        this.structure = "欢迎使用CHelper";
+        this.description = "作者：Yancey";
+        this.errorReason = "";
       } else {
-        this.structure = this.core.getStructure()
-        this.description = this.core.getDescription()
-        this.errorReason = this.core.getErrorReason()
+        this.structure = this.core.getStructure();
+        this.description = this.core.getDescription();
+        this.errorReason = this.core.getErrorReason();
       }
-      this.realSuggestionSize = this.core.getSuggestionSize()
-      this.suggestions = []
-      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
+      this.realSuggestionSize = this.core.getSuggestionSize();
+      this.suggestions = [];
+      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25));
       this.$refs.inputRef.scrollTo({
         left: this.$refs.inputRef.scrollWidth,
         behavior: "smooth",
@@ -71,10 +110,10 @@ export default {
     },
     loadMore(count) {
       if (this.core === undefined) {
-        return
+        return;
       }
-      const start = this.suggestions.length
-      const end = Math.min(start + count, this.realSuggestionSize)
+      const start = this.suggestions.length;
+      const end = Math.min(start + count, this.realSuggestionSize);
       for (let i = start; i < end; i++) {
         this.suggestions.push({
           title: this.core.getSuggestionTitle(i),
@@ -84,58 +123,47 @@ export default {
     },
     onSuggestionScroll() {
       if (this.$refs.listRef.scrollTop + 2 * this.$refs.listRef.clientHeight >= this.$refs.listRef.scrollHeight) {
-        this.loadMore(this.$refs.listRef.clientHeight / 25)
+        this.loadMore(this.$refs.listRef.clientHeight / 25);
       }
     },
     onSuggestionClick(which) {
       if (this.core === undefined) {
-        return
+        return;
       }
-      this.$refs.inputRef.focus()
-      this.core.onSuggestionClick(which)
-      this.input = this.core.getStringAfterSuggestionClick()
-      this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick()
-      this.onTextChanged()
+      this.$refs.inputRef.focus();
+      this.core.onSuggestionClick(which);
+      this.input = this.core.getStringAfterSuggestionClick();
+      this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick();
+      this.onTextChanged();
     },
-    openSettings() {
-      window.alert("暂时还没有设置")
+    selectBranch() {
+      this.openBranchSelector();
     },
     copy() {
       navigator.clipboard.writeText(this.input)
           .catch(function (reason) {
-            window.alert("复制失败：" + reason)
+            window.alert("复制失败：" + reason);
           })
+    },
+    getAllBranch() {
+      return ALL_BRANCH;
+    },
+    getAllBranchChinese() {
+      return ALL_BRANCH_CHINESE;
+    },
+    openBranchSelector() {
+      this.isBranchSelectorVisible = true;
+    },
+    closeBranchSelector() {
+      this.isBranchSelectorVisible = false;
+    },
+    async onBranchSelect(branch) {
+      console.log('Selected branch:', branch);
+      this.setCore(await getCore(branch));
     }
   }
 }
 </script>
-
-<template>
-  <div class="container">
-    <header class="header">
-      <div>
-        <div class="text-structure custom-font">{{ structure }}</div>
-        <div class="text-description custom-font">{{ description }}</div>
-        <div class="text-error-reason custom-font" v-if="errorReason">{{ errorReason }}</div>
-        <div class="line"/>
-      </div>
-    </header>
-    <main ref="listRef" @scroll="onSuggestionScroll">
-      <div class="div-suggestion" v-for="(suggestion, index) in suggestions" @click="onSuggestionClick(index)">
-        <div class="text-suggestion-name custom-font">{{ suggestion.title }}</div>
-        <div class=" text-suggestion-description custom-font">{{ suggestion.description }}</div>
-      </div>
-    </main>
-    <footer>
-      <div class="below">
-        <button class="button custom-font" @click="openSettings">设置</button>
-        <input ref="inputRef" class="input-box custom-font" placeholder="请输入内容" v-model="input"
-               @input="onTextChanged">
-        <button class="button custom-font" @click="copy">复制</button>
-      </div>
-    </footer>
-  </div>
-</template>
 
 <style>
 
@@ -162,6 +190,7 @@ main {
   margin: 5px 5px 0 5px;
   color: #000000;
   background-color: #f5f7fa;
+  border-radius: 5px;
 }
 
 .text-description {
@@ -170,6 +199,7 @@ main {
   margin: 5px 5px 0 5px;
   color: #666666;
   background-color: #f5f7fa;
+  border-radius: 5px;
 }
 
 .text-error-reason {
@@ -178,6 +208,7 @@ main {
   margin: 5px 5px 0 5px;
   color: #FF4444;
   background-color: #f5f7fa;
+  border-radius: 5px;
 }
 
 .div-suggestion {
@@ -185,6 +216,12 @@ main {
   padding: 5px;
   margin: 0 5px 5px 5px;
   background-color: #f5f7fa;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.div-suggestion:hover {
+  background-color: #f5f5f5;
 }
 
 .text-suggestion-name {
@@ -213,14 +250,20 @@ main {
   height: auto;
   color: black;
   text-align: left;
-  background-color: #f5f7fa;
+  background-color: white;
   padding: 10px;
   border: 0;
   border-radius: 5px;
+  outline: 1px solid lightgrey;
+}
+
+.input-box:hover {
+  background-color: #ffffff;
 }
 
 .input-box:focus {
-  outline: 2px solid dodgerblue;
+  background-color: #ffffff;
+  outline: 2px solid #007bff;
 }
 
 .button {
@@ -230,11 +273,16 @@ main {
   height: auto;
   color: #f5f7fa;
   text-align: center;
-  background: dodgerblue;
+  background: #007bff;
   border-radius: 5px;
+  cursor: pointer;
 }
 
-.custom-font {
+.button:hover {
+  background-color: #0070ff;
+}
+
+* {
   font-size: 15px;
   font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC',
   'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;

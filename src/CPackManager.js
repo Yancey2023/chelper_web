@@ -1,10 +1,10 @@
-import {CHelperCore, wasmInitFuture} from '@/libCHelperWeb.js'
+import {CHelperCore, createWasmFuture} from '@/libCHelperWeb.js';
 
-const VERSION_RELEASE = '1.21.30.03'
-const VERSION_BETA = '1.21.40.22'
-const VERSION_NETEASE = '1.20.10.25'
+const VERSION_RELEASE = '1.21.51.02';
+const VERSION_BETA = '1.21.60.27';
+const VERSION_NETEASE = '1.20.10.25';
 
-export const DEFAULT_BRANCH = 'release-experiment'
+export const DEFAULT_BRANCH = 'release-experiment';
 
 export const ALL_BRANCH = [
     "release-vanilla",
@@ -13,7 +13,7 @@ export const ALL_BRANCH = [
     "beta-experiment",
     "netease-vanilla",
     "netease-experiment"
-]
+];
 
 export const ALL_BRANCH_CHINESE = [
     "正式版-原版-" + VERSION_RELEASE,
@@ -22,15 +22,15 @@ export const ALL_BRANCH_CHINESE = [
     "测试版-实验性玩法-" +VERSION_BETA,
     "中国版-原版-" + VERSION_NETEASE,
     "中国版-实验性玩法-" + VERSION_NETEASE
-]
+];
 
 export async function getCore(branch) {
     return fetch(getRealFileName(branch))
         .then((response) => response.arrayBuffer())
         .then(async (cpack) => {
-            await wasmInitFuture
-            return new CHelperCore(new Uint8Array(cpack))
-        })
+            await createWasmFuture;
+            return new CHelperCore(new Uint8Array(cpack));
+        });
 }
 
 export function getRealFileName(branch) {
