@@ -2,7 +2,7 @@
   <div v-if="show" class="modal-overlay" @click="closeModal">
     <div class="modal" @click.stop>
       <div class="modal-header">
-        <div class="modal-title-free-space"/>
+        <button class="modal-title-free-space">&times;</button>
         <div class="modal-title-container">
           <h3 class="modal-title">选择分支</h3>
         </div>
@@ -117,6 +117,7 @@ export default {
   border: none;
   font-size: 24px;
   padding: 5px;
+  color: #00000000;
 }
 
 .close-button:hover {
