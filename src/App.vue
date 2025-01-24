@@ -105,10 +105,10 @@ export default {
       navigator.clipboard.writeText(this.input)
           .catch(function (reason) {
             window.alert("复制失败：" + reason)
-          });
+          })
     }
   }
-};
+}
 </script>
 
 <template>
