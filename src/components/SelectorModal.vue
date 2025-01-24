@@ -47,7 +47,6 @@ export default {
 </script>
 
 <style scoped>
-
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -123,5 +122,4 @@ export default {
 .close-button:hover {
   color: #000;
 }
-
 </style>
