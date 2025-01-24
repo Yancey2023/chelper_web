@@ -34,19 +34,23 @@ export default {
       document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px'
     },
     setCore(newCore) {
-      if (this.core != null) {
+      if (this.core !== undefined) {
         this.core.release()
       }
       this.core = newCore
       this.onTextChanged()
     },
     release() {
-      if (this.core != null) {
-        this.core.release()
-        this.core = null
+      if (this.core === undefined) {
+        return
       }
+      this.core.release()
+      this.core = undefined
     },
     onTextChanged() {
+      if (this.core === undefined) {
+        return
+      }
       this.core.onTextChanged(this.input, this.input.length)
       if (this.input.length === 0) {
         this.structure = "欢迎使用CHelper"
@@ -66,6 +70,9 @@ export default {
       })
     },
     loadMore(count) {
+      if (this.core === undefined) {
+        return
+      }
       const start = this.suggestions.length
       const end = Math.min(start + count, this.realSuggestionSize)
       for (let i = start; i < end; i++) {
@@ -81,14 +88,17 @@ export default {
       }
     },
     onSuggestionClick(which) {
+      if (this.core === undefined) {
+        return
+      }
       this.$refs.inputRef.focus()
       this.core.onSuggestionClick(which)
       this.input = this.core.getStringAfterSuggestionClick()
       this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick()
       this.onTextChanged()
     },
-    openBranchSelector() {
-      
+    openSettings() {
+      window.alert("暂时还没有设置")
     },
     copy() {
       navigator.clipboard.writeText(this.input)

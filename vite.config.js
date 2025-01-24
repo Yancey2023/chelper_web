@@ -29,12 +29,11 @@ export default defineConfig({
         }),
     ],
     esbuild: {
-        drop: ['console', 'debugger'],
+        drop: ['debugger'],
     },
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
-    },
-    base: '/chelper_web/'
+    }
 })
