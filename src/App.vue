@@ -52,7 +52,7 @@ export default {
       if (this.core === undefined) {
         return
       }
-      this.core.onTextChanged(this.input, this.input.length);
+      this.core.onTextChanged(this.input, this.input.length)
       if (this.input.length === 0) {
         this.structure = "欢迎使用CHelper"
         this.description = "作者：Yancey"
