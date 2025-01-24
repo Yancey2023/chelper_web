@@ -1,6 +1,6 @@
 <script>
 
-import {CHelperCore, wasmInitFuture} from './libCHelperWeb.js'
+import {CHelperCore, createWasmFuture} from './libCHelperWeb.js'
 
 export default {
   data() {
@@ -33,20 +33,25 @@ export default {
       document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px'
     },
     async loadWasmModule() {
-      fetch('release-experiment-1.21.50.07.cpack')
+      fetch('release-experiment-1.21.51.02.cpack')
           .then((response) => response.arrayBuffer())
           .then(async (cpack) => {
-            await wasmInitFuture
+            await createWasmFuture
             this.core = new CHelperCore(new Uint8Array(cpack))
             this.onTextChanged()
           })
     },
     release() {
-      if (this.core != null) {
-        this.core.release()
+      if (this.core === undefined) {
+        return
       }
+      this.core.release()
+      this.core = undefined
     },
     onTextChanged() {
+      if (this.core === undefined) {
+        return
+      }
       this.core.onTextChanged(this.input, this.input.length);
       if (this.input.length === 0) {
         this.structure = "欢迎使用CHelper"
@@ -66,6 +71,9 @@ export default {
       })
     },
     loadMore(count) {
+      if (this.core === undefined) {
+        return
+      }
       const start = this.suggestions.length
       const end = Math.min(start + count, this.realSuggestionSize)
       for (let i = start; i < end; i++) {
@@ -81,6 +89,9 @@ export default {
       }
     },
     onSuggestionClick(which) {
+      if (this.core === undefined) {
+        return
+      }
       this.$refs.inputRef.focus()
       this.core.onSuggestionClick(which)
       this.input = this.core.getStringAfterSuggestionClick()
