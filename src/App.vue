@@ -36,9 +36,8 @@
 </template>
 
 <script>
-
-import {ALL_BRANCH, ALL_BRANCH_CHINESE, DEFAULT_BRANCH, getCore} from "@/CPackManager.js";
-import SelectorModal from "@/SelectorModal.vue";
+import {ALL_BRANCH, ALL_BRANCH_CHINESE, DEFAULT_BRANCH, getCore} from "@/core/CPackManager.js";
+import SelectorModal from "@/components/SelectorModal.vue";
 
 export default {
   components: {
@@ -168,8 +167,7 @@ export default {
 }
 </script>
 
-<style>
-
+<style scoped>
 .container {
   display: grid;
   height: calc(var(--vh, 1vh) * 100);

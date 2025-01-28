@@ -1,4 +1,4 @@
-import {CHelperCore, createWasmFuture} from '@/libCHelperWeb.js';
+import {CHelperCore, createWasmFuture} from '@/core/libCHelperWeb.js';
 
 const VERSION_RELEASE = '1.21.51.02';
 const VERSION_BETA = '1.21.60.27';
