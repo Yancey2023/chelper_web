@@ -4,7 +4,7 @@
       <div class="modal-header">
         <button class="modal-title-free-space">&times;</button>
         <div class="modal-title-container">
-          <h3 class="modal-title">选择分支</h3>
+          <h3 class="modal-title">{{ title }}</h3>
         </div>
         <button class="close-button" @click="closeModal">&times;</button>
       </div>
@@ -21,6 +21,10 @@
 <script>
 export default {
   props: {
+    title: {
+      type: String,
+      required: true
+    },
     data: {
       type: Array,
       required: true
