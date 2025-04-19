@@ -26,6 +26,7 @@
       </div>
     </footer>
     <SelectorModal
+        :title="getSelectBranchTitle()"
         :data="getAllBranch()"
         :showNames="getAllBranchChinese()"
         :show="isBranchSelectorVisible"
@@ -146,6 +147,9 @@ export default {
           .catch(function (reason) {
             window.alert("复制失败：" + reason);
           })
+    },
+    getSelectBranchTitle() {
+      return "选择分支";
     },
     getAllBranch() {
       return ALL_BRANCH;
