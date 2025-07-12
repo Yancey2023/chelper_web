@@ -1,5 +1,12 @@
 import { CHelperCore, createWasmFuture } from '@/core/libCHelperWeb.js'
 
+import releaseVanillaCPack from '@/assets/release-vanilla-1.21.93.1.cpack?url'
+import releaseExperimentCPack from '@/assets/release-experiment-1.21.93.1.cpack?url'
+import betaVanillaCPack from '@/assets/beta-vanilla-1.21.100.23.cpack?url'
+import betaExperimentCPack from '@/assets/beta-experiment-1.21.100.23.cpack?url'
+import neteaseVanillaCPack from '@/assets/netease-vanilla-1.21.0.03.cpack?url'
+import neteaseExperimentCPack from '@/assets/netease-experiment-1.21.0.03.cpack?url'
+
 const VERSION_RELEASE = '1.21.93.1'
 const VERSION_BETA = '1.21.100.23'
 const VERSION_NETEASE = '1.21.0.03'
@@ -43,17 +50,17 @@ export async function getCore(branch) {
 export function getRealFileName(branch) {
   switch (branch) {
     case 'release-vanilla':
-      return 'release-vanilla-' + VERSION_RELEASE + '.cpack'
+      return releaseVanillaCPack
     case 'release-experiment':
-      return 'release-experiment-' + VERSION_RELEASE + '.cpack'
+      return releaseExperimentCPack
     case 'beta-vanilla':
-      return 'beta-vanilla-' + VERSION_BETA + '.cpack'
+      return betaVanillaCPack
     case 'beta-experiment':
-      return 'beta-experiment-' + VERSION_BETA + '.cpack'
+      return betaExperimentCPack
     case 'netease-vanilla':
-      return 'netease-vanilla-' + VERSION_NETEASE + '.cpack'
+      return neteaseVanillaCPack
     case 'netease-experiment':
-      return 'netease-experiment-' + VERSION_NETEASE + '.cpack'
+      return neteaseExperimentCPack
     default:
       return getRealFileName(DEFAULT_BRANCH)
   }
