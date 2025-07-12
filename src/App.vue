@@ -161,7 +161,7 @@ export default {
   background: darkgrey;
 }
 
-.scroller {
+main {
   flex: 1;
   overflow-y: auto;
 }

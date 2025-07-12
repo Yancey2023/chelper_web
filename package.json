@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:github_page": "vite build --base=/chelper_web/",
+    "build:my_server": "vite build --base=/chelper/",
     "preview": "vite preview",
     "format": "prettier --write src/"
   },
