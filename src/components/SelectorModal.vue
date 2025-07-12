@@ -1,3 +1,35 @@
+<script>
+export default {
+  props: {
+    title: {
+      type: String,
+      required: true,
+    },
+    data: {
+      type: Array,
+      required: true,
+    },
+    showNames: {
+      type: Array,
+      required: true,
+    },
+    show: {
+      type: Boolean,
+      required: true,
+    },
+  },
+  methods: {
+    closeModal() {
+      this.$emit('close')
+    },
+    onSelect(index) {
+      this.$emit('select', this.data[index])
+      this.closeModal()
+    },
+  },
+}
+</script>
+
 <template>
   <div v-if="show" class="modal-overlay" @click="closeModal">
     <div class="modal" @click.stop>
@@ -8,47 +40,17 @@
         </div>
         <button class="close-button" @click="closeModal">&times;</button>
       </div>
-      <button v-for="(showName, index) in showNames"
-              :key="index"
-              @click="onSelect(index)"
-              class="button">
+      <button
+        v-for="(showName, index) in showNames"
+        :key="index"
+        @click="onSelect(index)"
+        class="button"
+      >
         {{ showName }}
       </button>
     </div>
   </div>
 </template>
-
-<script>
-export default {
-  props: {
-    title: {
-      type: String,
-      required: true
-    },
-    data: {
-      type: Array,
-      required: true
-    },
-    showNames: {
-      type: Array,
-      required: true
-    },
-    show: {
-      type: Boolean,
-      required: true
-    }
-  },
-  methods: {
-    closeModal() {
-      this.$emit('close');
-    },
-    onSelect(index) {
-      this.$emit('select', this.data[index]);
-      this.closeModal();
-    }
-  }
-}
-</script>
 
 <style scoped>
 .modal-overlay {

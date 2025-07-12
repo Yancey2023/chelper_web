@@ -1,3 +1,114 @@
+<script>
+import { ALL_BRANCH, ALL_BRANCH_CHINESE, DEFAULT_BRANCH, getCore } from '@/core/CPackManager.js'
+import SelectorModal from '@/components/SelectorModal.vue'
+
+export default {
+  components: {
+    DynamicScroller,
+    DynamicScrollerItem,
+    SelectorModal,
+  },
+  data() {
+    return {
+      ALL_BRANCH: ALL_BRANCH,
+      ALL_BRANCH_CHINESE: ALL_BRANCH_CHINESE,
+      structure: 'CHelper正在加载中，请稍候',
+      description: '作者：Yancey',
+      input: '',
+      errorReason: '',
+      suggestions: [],
+      isBranchSelectorVisible: false,
+    }
+  },
+  mounted() {
+    this.core = undefined
+    getCore(DEFAULT_BRANCH).then((core) => {
+      this.setCore(core)
+    })
+  },
+  unmounted() {
+    this.release()
+  },
+  methods: {
+    setCore(newCore) {
+      if (this.core !== undefined) {
+        this.core.release()
+      }
+      this.core = newCore
+      this.onTextChanged()
+    },
+    release() {
+      if (this.core === undefined) {
+        return
+      }
+      this.core.release()
+      this.core = undefined
+    },
+    onTextChanged() {
+      if (this.core === undefined) {
+        return
+      }
+      this.core.onTextChanged(this.input, this.input.length)
+      if (this.input.length === 0) {
+        this.structure = '欢迎使用CHelper'
+        this.description = '作者：Yancey'
+        this.errorReason = ''
+      } else {
+        this.structure = this.core.getStructure()
+        this.description = this.core.getDescription()
+        const errorReasons = this.core.getErrorReasons()
+        if (errorReasons.length === 0) {
+          this.errorReason = ''
+        } else if (errorReasons.length === 1) {
+          this.errorReason = errorReasons[0].errorReason
+        } else {
+          this.errorReason = '可能的错误原因：'
+          for (let i = 0; i < errorReasons.length; i++) {
+            this.errorReason += `\n${i + 1}. ${errorReasons[i].errorReason}`
+          }
+        }
+      }
+      this.suggestions = this.core.getAllSuggestions()
+      this.$refs.inputRef.scrollTo({
+        left: this.$refs.inputRef.scrollWidth,
+        behavior: 'smooth',
+      })
+    },
+    onSuggestionClick(which) {
+      if (this.core === undefined) {
+        return
+      }
+      this.$refs.inputRef.focus()
+      const clickSuggestionResult = this.core.onSuggestionClick(which)
+      if (clickSuggestionResult == null) {
+        return
+      }
+      this.input = clickSuggestionResult.newText
+      this.$refs.inputRef.selectionStart = clickSuggestionResult.cursorPosition
+      this.$refs.inputRef.selectionEnd = clickSuggestionResult.cursorPosition
+      this.onTextChanged()
+    },
+    selectBranch() {
+      this.openBranchSelector()
+    },
+    copy() {
+      navigator.clipboard.writeText(this.input).catch(function (reason) {
+        window.alert('复制失败：' + reason)
+      })
+    },
+    openBranchSelector() {
+      this.isBranchSelectorVisible = true
+    },
+    closeBranchSelector() {
+      this.isBranchSelectorVisible = false
+    },
+    async onBranchSelect(branch) {
+      this.setCore(await getCore(branch))
+    },
+  },
+}
+</script>
+
 <template>
   <div class="container">
     <header class="header">
@@ -5,176 +116,44 @@
         <div class="text-structure">{{ structure }}</div>
         <div class="text-description">{{ description }}</div>
         <div class="text-error-reason" v-if="errorReason">{{ errorReason }}</div>
-        <div class="line"/>
+        <div class="line"></div>
       </div>
     </header>
-    <main ref="listRef" @scroll="onSuggestionScroll">
-      <div class="div-suggestion" v-for="(suggestion, index) in suggestions" @click="onSuggestionClick(index)">
-        <div class="text-suggestion-name">{{ suggestion.title }}</div>
-        <div class=" text-suggestion-description">{{ suggestion.description }}</div>
+    <main ref="listRef">
+      <div class="div-suggestion" v-for="item in suggestions" @click="onSuggestionClick(item.id)">
+        <div class="text-suggestion-name">{{ item.title }}</div>
+        <div class="text-suggestion-description">{{ item.description }}</div>
       </div>
     </main>
     <footer>
       <div class="below">
         <button class="button" @click="selectBranch">分支</button>
-        <input ref="inputRef" class="input-box" placeholder="请输入内容" v-model="input"
-               @input="onTextChanged">
+        <input
+          ref="inputRef"
+          class="input-box"
+          placeholder="请输入内容"
+          v-model="input"
+          @input="onTextChanged"
+        />
         <button class="button" @click="copy">复制</button>
-      </div>
-      <div class="beian">
-        <a class="beianlink" href="https://beian.miit.gov.cn/shouye.html">粤ICP备2024307783号</a>
       </div>
     </footer>
     <SelectorModal
-        :title="getSelectBranchTitle()"
-        :data="getAllBranch()"
-        :showNames="getAllBranchChinese()"
-        :show="isBranchSelectorVisible"
-        @close="closeBranchSelector"
-        @select="onBranchSelect"
+      :title="'选择分支'"
+      :data="this.ALL_BRANCH"
+      :showNames="this.ALL_BRANCH_CHINESE"
+      :show="isBranchSelectorVisible"
+      @close="closeBranchSelector"
+      @select="onBranchSelect"
     />
   </div>
 </template>
 
-<script>
-import {ALL_BRANCH, ALL_BRANCH_CHINESE, DEFAULT_BRANCH, getCore} from "@/core/CPackManager.js";
-import SelectorModal from "@/components/SelectorModal.vue";
-
-export default {
-  components: {
-    SelectorModal
-  },
-  data() {
-    return {
-      structure: "CHelper正在加载中，请稍候",
-      description: "作者：Yancey",
-      input: "",
-      errorReason: "",
-      realSuggestionSize: 0,
-      suggestions: [],
-      isBranchSelectorVisible: false
-    }
-  },
-  async created() {
-    this.core = undefined;
-    this.setCore(await getCore(DEFAULT_BRANCH));
-  },
-  mounted() {
-    this.resetVhAndPx();
-    window.addEventListener("resize", () => {
-      this.onSuggestionScroll();
-      this.resetVhAndPx();
-    });
-  },
-  unmounted() {
-    this.release();
-  },
-  methods: {
-    resetVhAndPx() {
-      let vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-      document.documentElement.style.fontSize = document.documentElement.clientWidth / 375 + 'px';
-    },
-    setCore(newCore) {
-      if (this.core !== undefined) {
-        this.core.release();
-      }
-      this.core = newCore;
-      this.onTextChanged();
-    },
-    release() {
-      if (this.core === undefined) {
-        return;
-      }
-      this.core.release()
-      this.core = undefined;
-    },
-    onTextChanged() {
-      if (this.core === undefined) {
-        return;
-      }
-      this.core.onTextChanged(this.input, this.input.length)
-      if (this.input.length === 0) {
-        this.structure = "欢迎使用CHelper";
-        this.description = "作者：Yancey";
-        this.errorReason = "";
-      } else {
-        this.structure = this.core.getStructure();
-        this.description = this.core.getDescription();
-        this.errorReason = this.core.getErrorReason();
-      }
-      this.realSuggestionSize = this.core.getSuggestionSize();
-      this.suggestions = [];
-      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25));
-      this.$refs.inputRef.scrollTo({
-        left: this.$refs.inputRef.scrollWidth,
-        behavior: "smooth",
-      })
-    },
-    loadMore(count) {
-      if (this.core === undefined) {
-        return;
-      }
-      const start = this.suggestions.length;
-      const end = Math.min(start + count, this.realSuggestionSize);
-      for (let i = start; i < end; i++) {
-        this.suggestions.push({
-          title: this.core.getSuggestionTitle(i),
-          description: this.core.getSuggestionDescription(i),
-        })
-      }
-    },
-    onSuggestionScroll() {
-      if (this.$refs.listRef.scrollTop + 2 * this.$refs.listRef.clientHeight >= this.$refs.listRef.scrollHeight) {
-        this.loadMore(this.$refs.listRef.clientHeight / 25);
-      }
-    },
-    onSuggestionClick(which) {
-      if (this.core === undefined) {
-        return;
-      }
-      this.$refs.inputRef.focus();
-      this.core.onSuggestionClick(which);
-      this.input = this.core.getStringAfterSuggestionClick();
-      this.$refs.inputRef.selectionStart = this.$refs.inputRef.selectionEnd = this.core.getSelectionAfterSuggestionClick();
-      this.onTextChanged();
-    },
-    selectBranch() {
-      this.openBranchSelector();
-    },
-    copy() {
-      navigator.clipboard.writeText(this.input)
-          .catch(function (reason) {
-            window.alert("复制失败：" + reason);
-          })
-    },
-    getSelectBranchTitle() {
-      return "选择分支";
-    },
-    getAllBranch() {
-      return ALL_BRANCH;
-    },
-    getAllBranchChinese() {
-      return ALL_BRANCH_CHINESE;
-    },
-    openBranchSelector() {
-      this.isBranchSelectorVisible = true;
-    },
-    closeBranchSelector() {
-      this.isBranchSelectorVisible = false;
-    },
-    async onBranchSelect(branch) {
-      console.log('Selected branch:', branch);
-      this.setCore(await getCore(branch));
-    }
-  }
-}
-</script>
-
 <style scoped>
 .container {
   display: grid;
-  height: calc(var(--vh, 1vh) * 100);
+  width: 100vw;
+  height: 100vh;
   grid-template-rows: auto 1fr auto;
 }
 
@@ -184,7 +163,7 @@ export default {
   background: darkgrey;
 }
 
-main {
+.scroller {
   flex: 1;
   overflow-y: auto;
 }
@@ -211,7 +190,7 @@ main {
   height: auto;
   padding: 10px;
   margin: 5px 5px 0 5px;
-  color: #FF4444;
+  color: #ff4444;
   background-color: #f5f7fa;
   border-radius: 5px;
 }
@@ -289,8 +268,8 @@ main {
 
 * {
   font-size: 15px;
-  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC',
-  'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
 }
 
 .beian {
