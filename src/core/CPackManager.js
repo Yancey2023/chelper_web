@@ -1,6 +1,6 @@
 import { CHelperCore, createWasmFuture } from '@/core/libCHelperWeb.js'
 
-const VERSION_RELEASE = '1.21.92.1'
+const VERSION_RELEASE = '1.21.93.1'
 const VERSION_BETA = '1.21.100.23'
 const VERSION_NETEASE = '1.21.0.03'
 
