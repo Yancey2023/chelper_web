@@ -1,3 +1,5 @@
+import wasmUrl from '@/assets/libCHelperWeb.wasm?url'
+
 var Module = typeof Module != 'undefined' ? Module : {}
 var ENVIRONMENT_IS_WEB = true
 var ENVIRONMENT_IS_WORKER = false
@@ -98,7 +100,7 @@ function abort(what) {
 }
 var wasmBinaryFile
 function findWasmBinary() {
-  return locateFile('libCHelperWeb.wasm')
+  return wasmUrl
 }
 function getBinarySync(file) {
   if (file == wasmBinaryFile && wasmBinary) {
