@@ -15,13 +15,17 @@ export default {
       input: '',
       errorReason: '',
       suggestions: [],
+      realSuggestionSize: 0,
       isBranchSelectorVisible: false,
     }
   },
-  mounted() {
+  async created() {
     this.core = undefined
-    getCore(DEFAULT_BRANCH).then((core) => {
-      this.setCore(core)
+    this.setCore(await getCore(DEFAULT_BRANCH))
+  },
+  mounted() {
+    window.addEventListener('resize', () => {
+      this.onSuggestionScroll()
     })
   },
   unmounted() {
@@ -66,11 +70,31 @@ export default {
           }
         }
       }
-      this.suggestions = this.core.getAllSuggestions()
+      this.realSuggestionSize = this.core.getSuggestionSize()
+      this.suggestions = []
+      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
       this.$refs.inputRef.scrollTo({
         left: this.$refs.inputRef.scrollWidth,
         behavior: 'smooth',
       })
+    },
+    loadMore(count) {
+      if (this.core === undefined) {
+        return
+      }
+      const start = this.suggestions.length
+      const end = Math.min(start + count, this.realSuggestionSize)
+      for (let i = start; i < end; i++) {
+        this.suggestions.push(this.core.getSuggestion(i))
+      }
+    },
+    onSuggestionScroll() {
+      if (
+        this.$refs.listRef.scrollTop + 2 * this.$refs.listRef.clientHeight >=
+        this.$refs.listRef.scrollHeight
+      ) {
+        this.loadMore(this.$refs.listRef.clientHeight / 25)
+      }
     },
     onSuggestionClick(which) {
       if (this.core === undefined) {
@@ -117,7 +141,7 @@ export default {
         <div class="line"></div>
       </div>
     </header>
-    <main ref="listRef">
+    <main ref="listRef" @scroll="onSuggestionScroll">
       <div class="div-suggestion" v-for="item in suggestions" @click="onSuggestionClick(item.id)">
         <div class="text-suggestion-name">{{ item.title }}</div>
         <div class="text-suggestion-description">{{ item.description }}</div>
@@ -153,8 +177,7 @@ export default {
 <style scoped>
 .container {
   display: grid;
-  width: 100vw;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   grid-template-rows: auto 1fr auto;
 }
 
