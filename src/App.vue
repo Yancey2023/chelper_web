@@ -4,8 +4,6 @@ import SelectorModal from '@/components/SelectorModal.vue'
 
 export default {
   components: {
-    DynamicScroller,
-    DynamicScrollerItem,
     SelectorModal,
   },
   data() {
