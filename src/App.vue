@@ -137,6 +137,9 @@ export default {
         />
         <button class="button" @click="copy">复制</button>
       </div>
+      <div class="beian">
+        <a class="beianlink" href="https://beian.miit.gov.cn/shouye.html">粤ICP备2024307783号</a>
+      </div>
     </footer>
     <SelectorModal
       :title="'选择分支'"
@@ -284,13 +287,12 @@ export default {
   text-decoration: none;
   font-size: 13px;
   text-align: center;
-  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC',
-  'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
 }
 
 .beianlink:hover {
   color: dodgerblue;
   text-decoration: underline;
 }
-
 </style>
