@@ -17,6 +17,8 @@ export default {
       suggestions: [],
       realSuggestionSize: 0,
       isBranchSelectorVisible: false,
+      cursorPosition: 0,
+      isComposing: false,
     }
   },
   async created() {
@@ -24,16 +26,184 @@ export default {
     this.setCore(await getCore(DEFAULT_BRANCH))
   },
   mounted() {
-    this.resizeObserver = new ResizeObserver(([{ target: entry }]) => {
+    this.resizeObserver = new ResizeObserver(() => {
       this.onSuggestionScroll()
     })
     this.resizeObserver.observe(this.$refs.listRef)
+    this.initEditor()
   },
   unmounted() {
     this.resizeObserver.disconnect()
     this.release()
   },
   methods: {
+    initEditor() {
+      const editor = this.$refs.editorRef
+      editor.innerText = this.input
+      editor.addEventListener('input', this.onEditorInput)
+      editor.addEventListener('click', this.onEditorClick)
+      editor.addEventListener('keydown', this.onEditorKeyDown)
+      editor.addEventListener('compositionstart', () => {
+        this.isComposing = true
+      })
+      editor.addEventListener('compositionend', () => {
+        this.isComposing = false
+        this.onEditorInput()
+      })
+    },
+    onEditorInput() {
+      if (this.isComposing) {
+        return
+      }
+      const editor = this.$refs.editorRef
+      this.input = editor.innerText == '\n' ? '' : editor.innerText
+      this.cursorPosition = this.saveCursorPosition(editor)
+      this.onTextChanged()
+    },
+    onEditorClick() {
+      const editor = this.$refs.editorRef
+      this.cursorPosition = this.saveCursorPosition(editor)
+      this.onTextChanged()
+    },
+    onEditorKeyDown(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+      }
+      setTimeout(() => {
+        const editor = this.$refs.editorRef
+        this.cursorPosition = this.saveCursorPosition(editor)
+        this.onTextChanged()
+      }, 0)
+    },
+    saveCursorPosition(container) {
+      const selection = window.getSelection()
+      if (selection.rangeCount === 0) {
+        return 0
+      }
+      const range = selection.getRangeAt(0)
+      const preRange = document.createRange()
+      preRange.selectNodeContents(container)
+      preRange.setEnd(range.startContainer, range.startOffset)
+      return preRange.toString().length
+    },
+    restoreCursorPosition(container, offset) {
+      const selection = window.getSelection()
+      const range = document.createRange()
+      let charCount = 0
+      let foundNode = null
+      const findNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          if (charCount + node.length >= offset) {
+            foundNode = node
+            return true
+          }
+          charCount += node.length
+        } else {
+          for (const child of node.childNodes) {
+            if (findNode(child)) return true
+          }
+        }
+      }
+      findNode(container)
+      if (foundNode) {
+        const pos = offset - charCount
+        range.setStart(foundNode, pos)
+        range.collapse(true)
+        selection.removeAllRanges()
+        selection.addRange(range)
+      }
+    },
+    applyHighlight() {
+      if (!this.syntaxTokens || this.syntaxTokens.length === 0) {
+        return
+      }
+      const editor = this.$refs.editorRef
+      const text = this.input
+      if (!text) {
+        editor.innerHTML = ''
+        return
+      }
+      const colors = new Array(text.length).fill(null)
+      for (let i = 0; i < this.syntaxTokens.length; i++) {
+        const purple = '#9f20a7'
+        const orange = '#d95a53'
+        const lightBlue = '#0fa0c8'
+        const blue = '#4571e1'
+        const lightGreen = '#4fad63'
+        const green = '#07c160'
+        const lightYellow = '#d4ac0d'
+        const yellow = '#836c0a'
+        switch (this.syntaxTokens[i]) {
+          case 1:
+            // boolean
+            colors[i] = lightGreen
+            break
+          case 2:
+            // float
+            colors[i] = lightGreen
+            break
+          case 3:
+            // integer
+            colors[i] = lightGreen
+            break
+          case 4:
+            // symbol
+            colors[i] = lightGreen
+            break
+          case 5:
+            // id
+            colors[i] = lightYellow
+            break
+          case 6:
+            // target selector
+            colors[i] = green
+            break
+          case 7:
+            // command
+            colors[i] = purple
+            break
+          case 8:
+            // bracket1
+            colors[i] = yellow
+            break
+          case 9:
+            // bracket2
+            colors[i] = purple
+            break
+          case 10:
+            // bracket3
+            colors[i] = blue
+            break
+          case 11:
+            // string
+            colors[i] = orange
+            break
+          case 12:
+            // null
+            colors[i] = lightBlue
+            break
+          case 13:
+            // range
+            colors[i] = lightBlue
+            break
+          case 14:
+            // literal
+            colors[i] = lightBlue
+            break
+          default:
+            // unknown
+            colors[i] = '#000000'
+            break
+        }
+      }
+      const cursorPos = this.saveCursorPosition(editor)
+      let html = ''
+      for (let i = 0; i < text.length; i++) {
+        html += `<span style="color:${colors[i]}">${text[i]}</span>`
+      }
+      editor.innerHTML = html
+      this.restoreCursorPosition(editor, cursorPos)
+    },
     setCore(newCore) {
       if (this.core !== undefined) {
         this.core.release()
@@ -52,15 +222,15 @@ export default {
       this.realSuggestionSize = this.core.getSuggestionSize()
       this.suggestions = []
       this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
-      this.$refs.inputRef.scrollTo({
-        left: this.$refs.inputRef.scrollWidth,
-        behavior: 'smooth',
+      this.$nextTick(() => {
+        const editor = this.$refs.editorRef
+        editor.scrollLeft = editor.scrollWidth
       })
     },
     onTextChanged() {
       if (this.input.length === 0) {
         this.lastInput = this.input
-        this.lastSelection = this.$refs.inputRef.selectionStart
+        this.lastSelection = this.cursorPosition
         this.structure = '欢迎使用CHelper'
         this.description = '作者：Yancey'
         this.errorReason = ''
@@ -74,15 +244,15 @@ export default {
         return
       }
       if (this.input === this.lastInput) {
-        if (this.$refs.inputRef.selectionStart === this.lastSelection) {
+        if (this.cursorPosition === this.lastSelection) {
           return
         }
-        this.lastSelection = this.$refs.inputRef.selectionStart
-        this.core.onSelectionChanged(this.$refs.inputRef.selectionStart)
+        this.lastSelection = this.cursorPosition
+        this.core.onSelectionChanged(this.cursorPosition)
       } else {
         this.lastInput = this.input
-        this.lastSelection = this.$refs.inputRef.selectionStart
-        this.core.onTextChanged(this.input, this.$refs.inputRef.selectionStart)
+        this.lastSelection = this.cursorPosition
+        this.core.onTextChanged(this.input, this.cursorPosition)
         this.structure = this.core.getStructure()
         const errorReasons = this.core.getErrorReasons()
         if (errorReasons.length === 0) {
@@ -95,6 +265,8 @@ export default {
             this.errorReason += `\n${i + 1}. ${errorReasons[i].errorReason}`
           }
         }
+        this.syntaxTokens = this.core.getSyntaxTokens()
+        this.applyHighlight()
       }
       this.description = this.core.getDescription()
       this.updateSuggestions()
@@ -121,17 +293,17 @@ export default {
       if (this.core === undefined) {
         return
       }
-      this.$refs.inputRef.focus()
+      const editor = this.$refs.editorRef
+      editor.focus()
       const clickSuggestionResult = this.core.onSuggestionClick(which)
       if (clickSuggestionResult == null) {
         return
       }
       this.input = clickSuggestionResult.newText
-      this.$refs.inputRef.setSelectionRange(
-        clickSuggestionResult.cursorPosition,
-        clickSuggestionResult.cursorPosition
-      )
+      this.cursorPosition = clickSuggestionResult.cursorPosition
+      editor.innerText = this.input
       this.onTextChanged()
+      this.restoreCursorPosition(editor, this.cursorPosition)
     },
     selectBranch() {
       this.openBranchSelector()
@@ -173,14 +345,12 @@ export default {
     <footer>
       <div class="below">
         <button class="button" @click="selectBranch">分支</button>
-        <input
-          ref="inputRef"
-          class="input-box"
-          placeholder="请输入内容"
-          v-model="input"
-          @input="onTextChanged"
-          @selectionchange="onTextChanged"
-        />
+        <div
+          ref="editorRef"
+          class="input-box editor"
+          contenteditable="true"
+          spellcheck="false"
+        ></div>
         <button class="button" @click="copy">复制</button>
       </div>
     </footer>
@@ -220,6 +390,7 @@ main {
   color: #000000;
   background-color: #f5f7fa;
   border-radius: 5px;
+  white-space: pre-wrap;
 }
 
 .text-description {
@@ -229,6 +400,7 @@ main {
   color: #666666;
   background-color: #f5f7fa;
   border-radius: 5px;
+  white-space: pre-wrap;
 }
 
 .text-error-reason {
@@ -238,6 +410,7 @@ main {
   color: #ff4444;
   background-color: #f5f7fa;
   border-radius: 5px;
+  white-space: pre-wrap;
 }
 
 .div-suggestion {
@@ -271,9 +444,10 @@ main {
   width: calc(100vw - 10px);
   margin: 5px;
   grid-template-columns: auto 1fr auto;
+  align-items: center;
 }
 
-.input-box {
+.editor {
   margin: 0 5px 0 5px;
   width: calc(100vw - 140px);
   height: auto;
@@ -284,15 +458,18 @@ main {
   border: 0;
   border-radius: 5px;
   outline: 1px solid lightgrey;
+  overflow-x: auto;
+  white-space: pre;
+  word-wrap: normal;
 }
 
-.input-box:hover {
-  background-color: #ffffff;
-}
-
-.input-box:focus {
+.editor:focus {
   background-color: #ffffff;
   outline: 2px solid #007bff;
+}
+
+.editor span {
+  display: inline;
 }
 
 .button {
