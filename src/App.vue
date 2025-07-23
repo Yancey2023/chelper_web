@@ -24,11 +24,13 @@ export default {
     this.setCore(await getCore(DEFAULT_BRANCH))
   },
   mounted() {
-    window.addEventListener('resize', () => {
+    this.resizeObserver = new ResizeObserver(([{ target: entry }]) => {
       this.onSuggestionScroll()
     })
+    this.resizeObserver.observe(this.$refs.listRef)
   },
   unmounted() {
+    this.resizeObserver.disconnect()
     this.release()
   },
   methods: {
@@ -162,7 +164,7 @@ export default {
         <div class="line"></div>
       </div>
     </header>
-    <main ref="listRef" @scroll="onSuggestionScroll">
+    <main ref="listRef" @scroll="onSuggestionScroll" @resize="onSuggestionScroll">
       <div class="div-suggestion" v-for="item in suggestions" @click="onSuggestionClick(item.id)">
         <div class="text-suggestion-name">{{ item.title }}</div>
         <div class="text-suggestion-description">{{ item.description }}</div>
