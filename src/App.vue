@@ -12,13 +12,10 @@ export default {
       ALL_BRANCH_CHINESE: ALL_BRANCH_CHINESE,
       structure: 'CHelper正在加载中，请稍候',
       description: '作者：Yancey',
-      input: '',
       errorReason: '',
       suggestions: [],
       realSuggestionSize: 0,
       isBranchSelectorVisible: false,
-      cursorPosition: 0,
-      isComposing: false,
     }
   },
   async created() {
@@ -31,52 +28,29 @@ export default {
     })
     this.resizeObserver.observe(this.$refs.listRef)
     this.initEditor()
+    this.cursorPollingInterval = setInterval(() => {
+      this.onTextChanged()
+    }, 100)
   },
   unmounted() {
     this.resizeObserver.disconnect()
     this.release()
+    clearInterval(this.cursorPollingInterval)
   },
   methods: {
     initEditor() {
       const editor = this.$refs.editorRef
-      editor.innerText = this.input
-      editor.addEventListener('input', this.onEditorInput)
-      editor.addEventListener('click', this.onEditorClick)
-      editor.addEventListener('keydown', this.onEditorKeyDown)
-      editor.addEventListener('selectionchange', this.onSelectionChange)
-      editor.addEventListener('compositionstart', () => {
-        this.isComposing = true
+      editor.addEventListener('input', this.onTextChanged)
+      editor.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+        }
       })
-      editor.addEventListener('compositionend', () => {
-        this.isComposing = false
-        this.onEditorInput()
-      })
-    },
-    onEditorInput() {
-      if (this.isComposing) {
-        return
-      }
-      const editor = this.$refs.editorRef
-      this.input = editor.innerText == '\n' ? '' : editor.innerText
-      this.cursorPosition = this.saveCursorPosition(editor)
-      this.onTextChanged()
-    },
-    onEditorClick() {
-      const editor = this.$refs.editorRef
-      this.cursorPosition = this.saveCursorPosition(editor)
-      this.onTextChanged()
-    },
-    onEditorKeyDown(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-      }
-    },
-    onSelectionChange() {
-      const editor = this.$refs.editorRef
-      this.cursorPosition = this.saveCursorPosition(editor)
-      this.onTextChanged()
     },
     saveCursorPosition(container) {
+      if (!container.contains(document.activeElement)) {
+        return this.lastSelection || 0
+      }
       const selection = window.getSelection()
       if (selection.rangeCount === 0) {
         return 0
@@ -119,7 +93,7 @@ export default {
         return
       }
       const editor = this.$refs.editorRef
-      const text = this.input
+      const text = editor.innerText == '\n' ? '' : editor.innerText
       if (!text) {
         editor.innerHTML = ''
         return
@@ -229,14 +203,17 @@ export default {
       })
     },
     onTextChanged() {
-      if (this.input.length === 0) {
-        this.lastInput = this.input
-        this.lastSelection = this.cursorPosition
+      const editor = this.$refs.editorRef
+      const input = editor.innerText == '\n' ? '' : editor.innerText
+      const cursorPosition = this.saveCursorPosition(editor)
+      if (input.length === 0) {
+        this.lastInput = input
+        this.lastSelection = cursorPosition
         this.structure = '欢迎使用CHelper'
         this.description = '作者：Yancey'
         this.errorReason = ''
         if (this.core !== undefined) {
-          this.core.onTextChanged(this.input, this.input.length)
+          this.core.onTextChanged(input, cursorPosition)
           this.updateSuggestions()
         }
         return
@@ -244,16 +221,16 @@ export default {
       if (this.core === undefined) {
         return
       }
-      if (this.input === this.lastInput) {
-        if (this.cursorPosition === this.lastSelection) {
+      if (input === this.lastInput) {
+        if (cursorPosition === this.lastSelection) {
           return
         }
-        this.lastSelection = this.cursorPosition
-        this.core.onSelectionChanged(this.cursorPosition)
+        this.lastSelection = cursorPosition
+        this.core.onSelectionChanged(cursorPosition)
       } else {
-        this.lastInput = this.input
-        this.lastSelection = this.cursorPosition
-        this.core.onTextChanged(this.input, this.cursorPosition)
+        this.lastInput = input
+        this.lastSelection = cursorPosition
+        this.core.onTextChanged(input, cursorPosition)
         this.structure = this.core.getStructure()
         const errorReasons = this.core.getErrorReasons()
         if (errorReasons.length === 0) {
@@ -300,19 +277,20 @@ export default {
       if (clickSuggestionResult == null) {
         return
       }
-      this.input = clickSuggestionResult.newText
-      this.cursorPosition = clickSuggestionResult.cursorPosition
-      editor.innerText = this.input
+      editor.innerText = clickSuggestionResult.newText
+      this.restoreCursorPosition(editor, clickSuggestionResult.cursorPosition)
       this.onTextChanged()
-      this.restoreCursorPosition(editor, this.cursorPosition)
     },
     selectBranch() {
       this.openBranchSelector()
     },
     copy() {
-      navigator.clipboard.writeText(this.input).catch(function (reason) {
-        window.alert('复制失败：' + reason)
-      })
+      const editor = this.$refs.editorRef
+      navigator.clipboard
+        .writeText(editor.innerText == '\n' ? '' : editor.innerText)
+        .catch(function (reason) {
+          window.alert('复制失败：' + reason)
+        })
     },
     openBranchSelector() {
       this.isBranchSelectorVisible = true
