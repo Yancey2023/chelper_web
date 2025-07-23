@@ -164,7 +164,7 @@ export default {
         <div class="line"></div>
       </div>
     </header>
-    <main ref="listRef" @scroll="onSuggestionScroll" @resize="onSuggestionScroll">
+    <main ref="listRef" @scroll="onSuggestionScroll">
       <div class="div-suggestion" v-for="item in suggestions" @click="onSuggestionClick(item.id)">
         <div class="text-suggestion-name">{{ item.title }}</div>
         <div class="text-suggestion-description">{{ item.description }}</div>
