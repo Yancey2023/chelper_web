@@ -27,6 +27,9 @@ export default {
     window.addEventListener('resize', () => {
       this.onSuggestionScroll()
     })
+    this.$refs.inputRef.addEventListener('selectionchange', () => {
+      this.onTextChanged()
+    })
   },
   unmounted() {
     this.release()
@@ -46,18 +49,42 @@ export default {
       this.core.release()
       this.core = undefined
     },
+    updateSuggestions() {
+      this.realSuggestionSize = this.core.getSuggestionSize()
+      this.suggestions = []
+      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
+      this.$refs.inputRef.scrollTo({
+        left: this.$refs.inputRef.scrollWidth,
+        behavior: 'smooth',
+      })
+    },
     onTextChanged() {
-      if (this.core === undefined) {
-        return
-      }
-      this.core.onTextChanged(this.input, this.input.length)
       if (this.input.length === 0) {
+        this.lastInput = this.input
+        this.lastSelection = this.$refs.inputRef.selectionStart
         this.structure = '欢迎使用CHelper'
         this.description = '作者：Yancey'
         this.errorReason = ''
+        if (this.core !== undefined) {
+          this.core.onTextChanged(this.input, this.input.length)
+          this.updateSuggestions()
+        }
+        return
+      }
+      if (this.core === undefined) {
+        return
+      }
+      if (this.input === this.lastInput) {
+        if (this.$refs.inputRef.selectionStart === this.lastSelection) {
+          return
+        }
+        this.lastSelection = this.$refs.inputRef.selectionStart
+        this.core.onSelectionChanged(this.$refs.inputRef.selectionStart)
       } else {
+        this.lastInput = this.input
+        this.lastSelection = this.$refs.inputRef.selectionStart
+        this.core.onTextChanged(this.input, this.$refs.inputRef.selectionStart)
         this.structure = this.core.getStructure()
-        this.description = this.core.getDescription()
         const errorReasons = this.core.getErrorReasons()
         if (errorReasons.length === 0) {
           this.errorReason = ''
@@ -70,13 +97,8 @@ export default {
           }
         }
       }
-      this.realSuggestionSize = this.core.getSuggestionSize()
-      this.suggestions = []
-      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
-      this.$refs.inputRef.scrollTo({
-        left: this.$refs.inputRef.scrollWidth,
-        behavior: 'smooth',
-      })
+      this.description = this.core.getDescription()
+      this.updateSuggestions()
     },
     loadMore(count) {
       if (this.core === undefined) {
@@ -106,8 +128,10 @@ export default {
         return
       }
       this.input = clickSuggestionResult.newText
-      this.$refs.inputRef.selectionStart = clickSuggestionResult.cursorPosition
-      this.$refs.inputRef.selectionEnd = clickSuggestionResult.cursorPosition
+      this.$refs.inputRef.setSelectionRange(
+        clickSuggestionResult.cursorPosition,
+        clickSuggestionResult.cursorPosition
+      )
       this.onTextChanged()
     },
     selectBranch() {
