@@ -277,7 +277,9 @@ export default {
       if (clickSuggestionResult == null) {
         return
       }
-      editor.innerText = clickSuggestionResult.newText
+      if (clickSuggestionResult.newText != (editor.innerText == '\n' ? '' : editor.innerText)) {
+        editor.innerText = clickSuggestionResult.newText
+      }
       this.restoreCursorPosition(editor, clickSuggestionResult.cursorPosition)
       this.onTextChanged()
     },
