@@ -57,8 +57,19 @@ export default {
         behavior: 'smooth',
       })
     },
+    updateSuggestions() {
+      this.realSuggestionSize = this.core.getSuggestionSize()
+      this.suggestions = []
+      this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
+      this.$refs.inputRef.scrollTo({
+        left: this.$refs.inputRef.scrollWidth,
+        behavior: 'smooth',
+      })
+    },
     onTextChanged() {
       if (this.input.length === 0) {
+        this.lastInput = this.input
+        this.lastSelection = this.$refs.inputRef.selectionStart
         this.lastInput = this.input
         this.lastSelection = this.$refs.inputRef.selectionStart
         this.structure = '欢迎使用CHelper'
@@ -79,7 +90,25 @@ export default {
         }
         this.lastSelection = this.$refs.inputRef.selectionStart
         this.core.onSelectionChanged(this.$refs.inputRef.selectionStart)
+        if (this.core !== undefined) {
+          this.core.onTextChanged(this.input, this.input.length)
+          this.updateSuggestions()
+        }
+        return
+      }
+      if (this.core === undefined) {
+        return
+      }
+      if (this.input === this.lastInput) {
+        if (this.$refs.inputRef.selectionStart === this.lastSelection) {
+          return
+        }
+        this.lastSelection = this.$refs.inputRef.selectionStart
+        this.core.onSelectionChanged(this.$refs.inputRef.selectionStart)
       } else {
+        this.lastInput = this.input
+        this.lastSelection = this.$refs.inputRef.selectionStart
+        this.core.onTextChanged(this.input, this.$refs.inputRef.selectionStart)
         this.lastInput = this.input
         this.lastSelection = this.$refs.inputRef.selectionStart
         this.core.onTextChanged(this.input, this.$refs.inputRef.selectionStart)
@@ -96,6 +125,8 @@ export default {
           }
         }
       }
+      this.description = this.core.getDescription()
+      this.updateSuggestions()
       this.description = this.core.getDescription()
       this.updateSuggestions()
     },
@@ -127,6 +158,10 @@ export default {
         return
       }
       this.input = clickSuggestionResult.newText
+      this.$refs.inputRef.setSelectionRange(
+        clickSuggestionResult.cursorPosition,
+        clickSuggestionResult.cursorPosition
+      )
       this.$refs.inputRef.setSelectionRange(
         clickSuggestionResult.cursorPosition,
         clickSuggestionResult.cursorPosition
