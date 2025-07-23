@@ -43,6 +43,7 @@ export default {
       editor.addEventListener('input', this.onEditorInput)
       editor.addEventListener('click', this.onEditorClick)
       editor.addEventListener('keydown', this.onEditorKeyDown)
+      editor.addEventListener('selectionchange', this.onSelectionChange)
       editor.addEventListener('compositionstart', () => {
         this.isComposing = true
       })
@@ -69,11 +70,11 @@ export default {
       if (e.key === 'Enter') {
         e.preventDefault()
       }
-      setTimeout(() => {
-        const editor = this.$refs.editorRef
-        this.cursorPosition = this.saveCursorPosition(editor)
-        this.onTextChanged()
-      }, 0)
+    },
+    onSelectionChange() {
+      const editor = this.$refs.editorRef
+      this.cursorPosition = this.saveCursorPosition(editor)
+      this.onTextChanged()
     },
     saveCursorPosition(container) {
       const selection = window.getSelection()
