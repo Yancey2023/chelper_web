@@ -76,12 +76,9 @@ export default {
       this.$refs.editorRef.innerText = text
     },
     getCursorPosition() {
-      if (this.$refs.editorRef.hasFocus()) {
-        return this.modelValue.cursorPosition
-      }
       const editor = this.$refs.editorRef
       if (!editor.contains(document.activeElement)) {
-        return this.lastSelection || 0
+        return this.modelValue.cursorPosition
       }
       const selection = window.getSelection()
       if (selection.rangeCount === 0) {
