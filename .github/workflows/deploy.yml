@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Build
-        run: npx vite build --base=/chelper/
+        run: npx vite build --base=/chelper/ --mode my_server
       - name: Deploy
         uses: easingthemes/ssh-deploy@main
         env:

@@ -2,11 +2,13 @@
 import { ALL_BRANCH, ALL_BRANCH_CHINESE, DEFAULT_BRANCH, getCore } from '@/core/CPackManager.js'
 import SelectorModal from '@/components/SelectorModal.vue'
 import Editor from '@/components/Editor.vue'
+import IcpFooter from '@/components/IcpFooter.vue'
 
 export default {
   components: {
     SelectorModal,
     Editor,
+    IcpFooter,
   },
   data() {
     return {
@@ -175,13 +177,11 @@ export default {
         <Editor
           :modelValue="editorValue"
           :syntaxTokens="syntaxTokens"
-          @update:modelValue="newValue => onEditorValueChanged(newValue)"
+          @update:modelValue="onEditorValueChanged"
         />
         <button class="button" @click="copy">复制</button>
       </div>
-      <div class="beian">
-        <a class="beianlink" href="https://beian.miit.gov.cn/shouye.html">粤ICP备2024307783号</a>
-      </div>
+      <IcpFooter />
     </footer>
     <SelectorModal
       :title="'选择分支'"
@@ -296,26 +296,5 @@ main {
   font-size: 15px;
   font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-}
-
-.beian {
-  left: 0;
-  width: calc(100vw - 10px);
-  text-align: center;
-  padding-bottom: 5px;
-}
-
-.beianlink {
-  color: #666666;
-  text-decoration: none;
-  font-size: 13px;
-  text-align: center;
-  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-}
-
-.beianlink:hover {
-  color: dodgerblue;
-  text-decoration: underline;
 }
 </style>

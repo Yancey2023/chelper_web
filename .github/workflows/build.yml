@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Build
-        run: npx vite build --base=/${{ github.event.repository.name }}/
+        run: npx vite build --base=/${{ github.event.repository.name }}/ --mode production
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
