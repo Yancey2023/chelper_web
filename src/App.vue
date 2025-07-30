@@ -128,11 +128,10 @@ export default {
       if (clickSuggestionResult == null) {
         return
       }
-      this.editorValue = {
+      this.onEditorValueChanged({
         text: clickSuggestionResult.newText,
         cursorPosition: clickSuggestionResult.cursorPosition,
-      }
-      this.onEditorValueChanged(this.editorValue)
+      })
     },
     selectBranch() {
       this.openBranchSelector()
