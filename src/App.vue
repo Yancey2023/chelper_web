@@ -1,10 +1,12 @@
 <script>
 import { ALL_BRANCH, ALL_BRANCH_CHINESE, DEFAULT_BRANCH, getCore } from '@/core/CPackManager.js'
 import SelectorModal from '@/components/SelectorModal.vue'
+import Editor from '@/components/Editor.vue'
 
 export default {
   components: {
     SelectorModal,
+    Editor,
   },
   data() {
     return {
@@ -16,6 +18,11 @@ export default {
       suggestions: [],
       realSuggestionSize: 0,
       isBranchSelectorVisible: false,
+      editorValue: {
+        text: '',
+        cursorPosition: 0,
+      },
+      syntaxTokens: [],
     }
   },
   async created() {
@@ -27,164 +34,18 @@ export default {
       this.onSuggestionScroll()
     })
     this.resizeObserver.observe(this.$refs.listRef)
-    this.initEditor()
-    this.cursorPollingInterval = setInterval(() => {
-      this.onTextChanged()
-    }, 100)
   },
   unmounted() {
     this.resizeObserver.disconnect()
     this.release()
-    clearInterval(this.cursorPollingInterval)
   },
   methods: {
-    initEditor() {
-      const editor = this.$refs.editorRef
-      editor.addEventListener('input', this.onTextChanged)
-      editor.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault()
-        }
-      })
-    },
-    saveCursorPosition(container) {
-      if (!container.contains(document.activeElement)) {
-        return this.lastSelection || 0
-      }
-      const selection = window.getSelection()
-      if (selection.rangeCount === 0) {
-        return 0
-      }
-      const range = selection.getRangeAt(0)
-      const preRange = document.createRange()
-      preRange.selectNodeContents(container)
-      preRange.setEnd(range.startContainer, range.startOffset)
-      return preRange.toString().length
-    },
-    restoreCursorPosition(container, offset) {
-      const selection = window.getSelection()
-      const range = document.createRange()
-      let charCount = 0
-      let foundNode = null
-      const findNode = (node) => {
-        if (node.nodeType === Node.TEXT_NODE) {
-          if (charCount + node.length >= offset) {
-            foundNode = node
-            return true
-          }
-          charCount += node.length
-        } else {
-          for (const child of node.childNodes) {
-            if (findNode(child)) return true
-          }
-        }
-      }
-      findNode(container)
-      if (foundNode) {
-        const pos = offset - charCount
-        range.setStart(foundNode, pos)
-        range.collapse(true)
-        selection.removeAllRanges()
-        selection.addRange(range)
-      }
-    },
-    applyHighlight() {
-      if (!this.syntaxTokens || this.syntaxTokens.length === 0) {
-        return
-      }
-      const editor = this.$refs.editorRef
-      const text = editor.innerText == '\n' ? '' : editor.innerText
-      if (!text) {
-        editor.innerHTML = ''
-        return
-      }
-      const colors = new Array(text.length).fill(null)
-      for (let i = 0; i < this.syntaxTokens.length; i++) {
-        const purple = '#9f20a7'
-        const orange = '#d95a53'
-        const lightBlue = '#0fa0c8'
-        const blue = '#4571e1'
-        const lightGreen = '#4fad63'
-        const green = '#07c160'
-        const lightYellow = '#d4ac0d'
-        const yellow = '#836c0a'
-        switch (this.syntaxTokens[i]) {
-          case 1:
-            // boolean
-            colors[i] = lightGreen
-            break
-          case 2:
-            // float
-            colors[i] = lightGreen
-            break
-          case 3:
-            // integer
-            colors[i] = lightGreen
-            break
-          case 4:
-            // symbol
-            colors[i] = lightGreen
-            break
-          case 5:
-            // id
-            colors[i] = lightYellow
-            break
-          case 6:
-            // target selector
-            colors[i] = green
-            break
-          case 7:
-            // command
-            colors[i] = purple
-            break
-          case 8:
-            // bracket1
-            colors[i] = yellow
-            break
-          case 9:
-            // bracket2
-            colors[i] = purple
-            break
-          case 10:
-            // bracket3
-            colors[i] = blue
-            break
-          case 11:
-            // string
-            colors[i] = orange
-            break
-          case 12:
-            // null
-            colors[i] = lightBlue
-            break
-          case 13:
-            // range
-            colors[i] = lightBlue
-            break
-          case 14:
-            // literal
-            colors[i] = lightBlue
-            break
-          default:
-            // unknown
-            colors[i] = '#000000'
-            break
-        }
-      }
-      const cursorPos = this.saveCursorPosition(editor)
-      let html = ''
-      for (let i = 0; i < text.length; i++) {
-        html += `<span style="color:${colors[i]}">${text[i]}</span>`
-      }
-      editor.innerHTML = html
-      this.restoreCursorPosition(editor, cursorPos)
-    },
     setCore(newCore) {
       if (this.core !== undefined) {
         this.core.release()
       }
       this.core = newCore
-      this.onTextChanged()
+      this.onEditorValueChanged(this.editorValue)
     },
     release() {
       if (this.core === undefined) {
@@ -197,23 +58,15 @@ export default {
       this.realSuggestionSize = this.core.getSuggestionSize()
       this.suggestions = []
       this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
-      this.$nextTick(() => {
-        const editor = this.$refs.editorRef
-        editor.scrollLeft = editor.scrollWidth
-      })
     },
-    onTextChanged() {
-      const editor = this.$refs.editorRef
-      const input = editor.innerText == '\n' ? '' : editor.innerText
-      const cursorPosition = this.saveCursorPosition(editor)
-      if (input.length === 0) {
-        this.lastInput = input
-        this.lastSelection = cursorPosition
+    onEditorValueChanged(newEditorValue) {
+      if (newEditorValue.text.length === 0) {
+        this.editorValue = newEditorValue
         this.structure = '欢迎使用CHelper'
         this.description = '作者：Yancey'
         this.errorReason = ''
         if (this.core !== undefined) {
-          this.core.onTextChanged(input, cursorPosition)
+          this.core.onTextChanged(this.editorValue.text, this.editorValue.cursorPosition)
           this.updateSuggestions()
         }
         return
@@ -221,16 +74,15 @@ export default {
       if (this.core === undefined) {
         return
       }
-      if (input === this.lastInput) {
-        if (cursorPosition === this.lastSelection) {
+      if (this.editorValue.text === newEditorValue.text) {
+        if (this.editorValue.cursorPosition === newEditorValue.cursorPosition) {
           return
         }
-        this.lastSelection = cursorPosition
-        this.core.onSelectionChanged(cursorPosition)
+        this.editorValue = newEditorValue
+        this.core.onSelectionChanged(this.editorValue.cursorPosition)
       } else {
-        this.lastInput = input
-        this.lastSelection = cursorPosition
-        this.core.onTextChanged(input, cursorPosition)
+        this.editorValue = newEditorValue
+        this.core.onTextChanged(this.editorValue.text, this.editorValue.cursorPosition)
         this.structure = this.core.getStructure()
         const errorReasons = this.core.getErrorReasons()
         if (errorReasons.length === 0) {
@@ -244,7 +96,6 @@ export default {
           }
         }
         this.syntaxTokens = this.core.getSyntaxTokens()
-        this.applyHighlight()
       }
       this.description = this.core.getDescription()
       this.updateSuggestions()
@@ -264,35 +115,30 @@ export default {
         this.$refs.listRef.scrollTop + 2 * this.$refs.listRef.clientHeight >=
         this.$refs.listRef.scrollHeight
       ) {
-        this.loadMore(this.$refs.listRef.clientHeight / 25)
+        this.loadMore(Math.floor(this.$refs.listRef.clientHeight / 25))
       }
     },
     onSuggestionClick(which) {
       if (this.core === undefined) {
         return
       }
-      const editor = this.$refs.editorRef
-      editor.focus()
       const clickSuggestionResult = this.core.onSuggestionClick(which)
       if (clickSuggestionResult == null) {
         return
       }
-      if (clickSuggestionResult.newText != (editor.innerText == '\n' ? '' : editor.innerText)) {
-        editor.innerText = clickSuggestionResult.newText
+      this.editorValue = {
+        text: clickSuggestionResult.newText,
+        cursorPosition: clickSuggestionResult.cursorPosition,
       }
-      this.restoreCursorPosition(editor, clickSuggestionResult.cursorPosition)
-      this.onTextChanged()
+      this.onEditorValueChanged(this.editorValue)
     },
     selectBranch() {
       this.openBranchSelector()
     },
     copy() {
-      const editor = this.$refs.editorRef
-      navigator.clipboard
-        .writeText(editor.innerText == '\n' ? '' : editor.innerText)
-        .catch(function (reason) {
-          window.alert('复制失败：' + reason)
-        })
+      navigator.clipboard.writeText(this.editorValue.text).catch(function (reason) {
+        window.alert('复制失败：' + reason)
+      })
     },
     openBranchSelector() {
       this.isBranchSelectorVisible = true
@@ -326,12 +172,11 @@ export default {
     <footer>
       <div class="below">
         <button class="button" @click="selectBranch">分支</button>
-        <div
-          ref="editorRef"
-          class="input-box editor"
-          contenteditable="true"
-          spellcheck="false"
-        ></div>
+        <Editor
+          :modelValue="editorValue"
+          :syntaxTokens="syntaxTokens"
+          @update:modelValue="newValue => onEditorValueChanged(newValue)"
+        />
         <button class="button" @click="copy">复制</button>
       </div>
       <div class="beian">
@@ -431,36 +276,11 @@ main {
   align-items: center;
 }
 
-.editor {
-  margin: 0 5px 0 5px;
-  width: calc(100vw - 140px);
-  height: auto;
-  color: black;
-  text-align: left;
-  background-color: white;
-  padding: 10px;
-  border: 0;
-  border-radius: 5px;
-  outline: 1px solid lightgrey;
-  overflow-x: auto;
-  white-space: pre;
-  word-wrap: normal;
-}
-
-.editor:focus {
-  background-color: #ffffff;
-  outline: 2px solid #007bff;
-}
-
-.editor span {
-  display: inline;
-}
-
 .button {
   padding: 5px;
   border: 0;
   width: 50px;
-  height: auto;
+  height: 100%;
   color: #f5f7fa;
   text-align: center;
   background: #007bff;
