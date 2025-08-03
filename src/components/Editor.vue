@@ -6,7 +6,7 @@ export default {
       required: true,
     },
     syntaxTokens: {
-      type: Array[Number],
+      type: Array,
       required: true,
     },
   },
@@ -36,22 +36,33 @@ export default {
         text: '',
         cursorPosition: 0,
       },
+      isComposing: false,
     }
   },
   mounted() {
-    this.$refs.editorRef.addEventListener('input', () => {
-      this.tempModelValue = {
-        text: this.getText(),
-        cursorPosition: this.getCursorPosition(),
-      }
-      this.$emit('update:modelValue', this.tempModelValue)
+    this.$refs.editorRef.addEventListener('input', this.updateModelValue)
+    this.$refs.editorRef.addEventListener('compositionstart', () => {
+      this.isComposing = true
+    })
+    this.$refs.editorRef.addEventListener('compositionend', () => {
+      this.isComposing = false
+      this.updateModelValue()
     })
     this.$refs.editorRef.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault()
       }
     })
-    this.ticker = setInterval(() => {
+    this.ticker = setInterval(() => this.updateModelValue, 100)
+  },
+  unmounted() {
+    clearInterval(this.ticker)
+  },
+  methods: {
+    updateModelValue() {
+      if (this.isComposing) {
+        return
+      }
       this.tempModelValue = {
         text: this.getText(),
         cursorPosition: this.getCursorPosition(),
@@ -62,12 +73,7 @@ export default {
       ) {
         this.$emit('update:modelValue', this.tempModelValue)
       }
-    }, 100)
-  },
-  unmounted() {
-    clearInterval(this.ticker)
-  },
-  methods: {
+    },
     getText() {
       const innerText = this.$refs.editorRef.innerText
       return innerText == '\n' ? '' : innerText
