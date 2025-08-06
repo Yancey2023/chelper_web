@@ -2,8 +2,8 @@ import { CHelperCore, createWasmFuture } from '@/core/libCHelperWeb.js'
 
 import releaseVanillaCPack from '@/assets/release-vanilla-1.21.94.1.cpack?url'
 import releaseExperimentCPack from '@/assets/release-experiment-1.21.94.1.cpack?url'
-import betaVanillaCPack from '@/assets/beta-vanilla-1.21.100.24.cpack?url'
-import betaExperimentCPack from '@/assets/beta-experiment-1.21.100.24.cpack?url'
+import betaVanillaCPack from '@/assets/beta-vanilla-1.21.110.22.cpack?url'
+import betaExperimentCPack from '@/assets/beta-experiment-1.21.110.22.cpack?url'
 import neteaseVanillaCPack from '@/assets/netease-vanilla-1.21.0.03.cpack?url'
 import neteaseExperimentCPack from '@/assets/netease-experiment-1.21.0.03.cpack?url'
 
@@ -21,8 +21,8 @@ export const ALL_BRANCH = [
 export const ALL_BRANCH_CHINESE = [
   '正式版-原版-1.21.94.1',
   '正式版-实验性玩法-1.21.94.1',
-  '测试版-原版-1.21.100.24',
-  '测试版-实验性玩法-1.21.100.24',
+  '测试版-原版-1.21.110.22',
+  '测试版-实验性玩法-1.21.110.22',
   '中国版-原版-1.21.0.03',
   '中国版-实验性玩法-1.21.0.03',
 ]
