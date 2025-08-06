@@ -53,7 +53,7 @@ export default {
         e.preventDefault()
       }
     })
-    this.ticker = setInterval(() => this.updateModelValue, 100)
+    this.ticker = setInterval(this.updateModelValue, 100)
   },
   unmounted() {
     clearInterval(this.ticker)
