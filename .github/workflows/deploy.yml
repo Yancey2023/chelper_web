@@ -24,7 +24,7 @@ jobs:
         run: pnpm install
 
       - name: Build
-        run: vite build --base=/chelper/ --mode my_server
+        run: npx vite build --base=/chelper/ --mode my_server
   
       - name: Deploy
         uses: easingthemes/ssh-deploy@main

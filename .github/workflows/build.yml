@@ -37,7 +37,7 @@ jobs:
         run: pnpm install
  
       - name: Build
-        run: vite build --base=/${{ github.event.repository.name }}/ --mode production
+        run: npx vite build --base=/${{ github.event.repository.name }}/ --mode production
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
